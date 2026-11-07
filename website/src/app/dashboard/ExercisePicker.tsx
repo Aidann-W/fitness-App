@@ -105,7 +105,7 @@ export default function ExercisePicker({ label, value, onChange, exclude }: Prop
       />
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-full min-w-[17rem] rounded-2xl border border-[#d5e0e8] bg-white p-3 shadow-lg">
+        <div className="exercise-picker-menu absolute left-0 top-full z-30 mt-2 w-full min-w-[17rem] rounded-2xl border border-[#d5e0e8] bg-white p-3 shadow-lg">
           <label className="block text-xs text-slate-500">
             Browse
             <select
