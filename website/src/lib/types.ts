@@ -13,3 +13,11 @@ export interface WorkoutRoutine {
   exercises: Exercise[];
   created_at?: string;
 }
+
+export interface RoutineAnswers {
+  goal: string;
+  experience: string;
+  equipment: string[];
+  minutes: number;
+  focus: string;
+}

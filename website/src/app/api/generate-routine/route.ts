@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Type } from '@google/genai';
-import { ai, GEMINI_MODEL } from '@/lib/gemini';
-
-const TIMEOUT_MS = 30_000;
+import { generateWithFallback } from '@/lib/gemini';
 
 const routineSchema = {
   type: Type.OBJECT,
@@ -31,20 +29,18 @@ export async function POST(req: Request) {
   try {
     const { answers } = await req.json();
 
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: `Design a gym routine based on: ${JSON.stringify(answers)}`,
-      config: {
+    const response = await generateWithFallback(
+      `Design a gym routine based on: ${JSON.stringify(answers)}`,
+      {
         responseMimeType: 'application/json',
         responseSchema: routineSchema,
-        abortSignal: AbortSignal.timeout(TIMEOUT_MS),
         systemInstruction:
           'You are a strength coach for beginner and intermediate gym users. ' +
           'Only use equipment the user has. Fit the routine to their time limit. ' +
           'Keep notes to one short sentence. ' +
           'Do not give medical, injury, or rehabilitation advice.',
-      },
-    });
+      }
+    );
 
     const routine = JSON.parse(response.text ?? '');
     if (!Array.isArray(routine.exercises) || routine.exercises.length === 0) {
