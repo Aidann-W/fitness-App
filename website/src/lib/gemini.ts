@@ -1,4 +1,4 @@
-import { GoogleGenAI, type GenerateContentConfig } from '@google/genai';
+import { GoogleGenAI, Type, type GenerateContentConfig } from '@google/genai';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -32,3 +32,15 @@ export async function generateWithFallback(contents: string, config: GenerateCon
     return generate(GEMINI_FALLBACK_MODEL, contents, config);
   }
 }
+
+export const exerciseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING },
+    sets: { type: Type.INTEGER },
+    reps: { type: Type.STRING },
+    rest_seconds: { type: Type.INTEGER },
+    notes: { type: Type.STRING },
+  },
+  required: ['name', 'sets', 'reps', 'rest_seconds', 'notes'],
+};

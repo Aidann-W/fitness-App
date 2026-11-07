@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { RoutineAnswers, WorkoutRoutine } from './types';
+import type { Exercise, RoutineAnswers, SetLog, WorkoutRoutine } from './types';
 
 async function loadAccessToken() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -52,5 +52,33 @@ export function generateRoutine(answers: RoutineAnswers) {
   return request<WorkoutRoutine>('/api/generate-routine', {
     method: 'POST',
     body: JSON.stringify({ answers }),
+  });
+}
+
+export function updateRoutineExercises(id: string, exercises: Exercise[]) {
+  return request<{ ok: true }>('/api/routines', {
+    method: 'PATCH',
+    body: JSON.stringify({ id, exercises }),
+  });
+}
+
+export function swapExercise(exercise: Exercise, others: string[], reason: string) {
+  return request<Exercise>('/api/modify-routine', {
+    method: 'POST',
+    body: JSON.stringify({ exercise, others, reason }),
+  });
+}
+
+export function logSet(log: SetLog) {
+  return request<{ ok: true }>('/api/set-logs', {
+    method: 'POST',
+    body: JSON.stringify(log),
+  });
+}
+
+export function deleteSetLog(log: Pick<SetLog, 'session_id' | 'exercise_name' | 'set_index'>) {
+  return request<{ ok: true }>('/api/set-logs', {
+    method: 'DELETE',
+    body: JSON.stringify(log),
   });
 }

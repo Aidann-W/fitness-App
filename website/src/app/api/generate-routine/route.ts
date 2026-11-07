@@ -1,31 +1,23 @@
 import { NextResponse } from 'next/server';
 import { Type } from '@google/genai';
-import { generateWithFallback } from '@/lib/gemini';
+import { exerciseSchema, generateWithFallback } from '@/lib/gemini';
+import { isSignedIn } from '@/lib/supabase';
 
 const routineSchema = {
   type: Type.OBJECT,
   properties: {
     title: { type: Type.STRING },
     description: { type: Type.STRING },
-    exercises: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          sets: { type: Type.INTEGER },
-          reps: { type: Type.STRING },
-          rest_seconds: { type: Type.INTEGER },
-          notes: { type: Type.STRING },
-        },
-        required: ['name', 'sets', 'reps', 'rest_seconds', 'notes'],
-      },
-    },
+    exercises: { type: Type.ARRAY, items: exerciseSchema },
   },
   required: ['title', 'description', 'exercises'],
 };
 
 export async function POST(req: Request) {
+  if (!(await isSignedIn(req))) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+  }
+
   try {
     const { answers } = await req.json();
 

@@ -1,10 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { fetchRoutines, generateRoutine, saveRoutine } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import {
+  fetchRoutines,
+  generateRoutine,
+  saveRoutine,
+  swapExercise,
+  updateRoutineExercises,
+} from '@/lib/api';
 import { starterPresets } from '@/lib/mockData';
-import type { RoutineAnswers, WorkoutRoutine } from '@/lib/types';
+import { readJson, writeJson } from '@/lib/storage';
+import type { ActiveSession, Exercise, RoutineAnswers, WorkoutRoutine } from '@/lib/types';
 import IntakeModal from './IntakeModal';
+import SwapModal from './SwapModal';
+import WorkoutSession from './WorkoutSession';
+
+const ROUTINES_KEY = 'cumulusfit.routines';
+const SESSION_KEY = 'cumulusfit.activeSession';
+
+// Presets and unsaved routines have no row in Supabase to update.
+const isStored = (routine: WorkoutRoutine) =>
+  Boolean(routine.id) && !starterPresets.some((preset) => preset.id === routine.id);
 
 export default function Dashboard() {
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
@@ -12,24 +28,103 @@ export default function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState<WorkoutRoutine | null>(null);
   const [showIntake, setShowIntake] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [session, setSession] = useState<ActiveSession | null>(null);
+  const [swapIndex, setSwapIndex] = useState<number | null>(null);
+  const hasUnsavedEdits = useRef(false);
 
   // Fetch the user's saved routines on load. Presets are always available.
   useEffect(() => {
     async function loadRoutines() {
       try {
         const saved = await fetchRoutines();
+        writeJson(ROUTINES_KEY, saved);
         setRoutines(saved);
         setSelectedRoutine(saved[0] ?? starterPresets[0]);
       } catch (err) {
         console.error('Failed to load routines:', err);
-        setNotice('Could not load your saved routines. Showing presets only.');
-        setSelectedRoutine(starterPresets[0]);
+        const cached = readJson<WorkoutRoutine[]>(ROUTINES_KEY) ?? [];
+        setRoutines(cached);
+        setSelectedRoutine(cached[0] ?? starterPresets[0]);
+        setNotice(
+          cached.length > 0
+            ? "Can't reach the cloud. Showing the routines saved on this device."
+            : 'Could not load your saved routines. Showing presets only.'
+        );
       } finally {
         setLoading(false);
       }
     }
+    setSession(readJson<ActiveSession>(SESSION_KEY));
     loadRoutines();
   }, []);
+
+  const replaceRoutine = (updated: WorkoutRoutine) => {
+    setSelectedRoutine(updated);
+    setRoutines((prev) => {
+      const next = prev.map((routine) => (routine.id === updated.id ? updated : routine));
+      writeJson(ROUTINES_KEY, next);
+      return next;
+    });
+  };
+
+  const persistExercises = async (routine: WorkoutRoutine) => {
+    if (!isStored(routine)) return;
+    try {
+      await updateRoutineExercises(routine.id!, routine.exercises);
+    } catch (err) {
+      console.error('Failed to save edits:', err);
+      setNotice('Your edits could not be saved. They will be lost if you refresh.');
+    }
+  };
+
+  const updateSession = (update: (prev: ActiveSession) => ActiveSession) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = update(prev);
+      writeJson(SESSION_KEY, next);
+      return next;
+    });
+  };
+
+  const startWorkout = (routine: WorkoutRoutine) => {
+    const next: ActiveSession = {
+      sessionId: crypto.randomUUID(),
+      routineId: isStored(routine) ? routine.id! : null,
+      routine,
+      sets: {},
+      restEndsAt: null,
+    };
+    writeJson(SESSION_KEY, next);
+    setSession(next);
+  };
+
+  const finishWorkout = () => {
+    writeJson(SESSION_KEY, null);
+    setSession(null);
+  };
+
+  const swapRoutine = session?.routine ?? selectedRoutine;
+
+  const handleSwap = async (reason: string) => {
+    if (!swapRoutine || swapIndex === null) return;
+
+    const others = swapRoutine.exercises
+      .filter((_, i) => i !== swapIndex)
+      .map((exercise) => exercise.name);
+    const replacement: Exercise = await swapExercise(swapRoutine.exercises[swapIndex], others, reason);
+
+    const exercises = [...swapRoutine.exercises];
+    exercises[swapIndex] = replacement;
+    const updated = { ...swapRoutine, exercises };
+
+    if (session) {
+      updateSession((prev) => ({ ...prev, routine: updated }));
+    } else {
+      replaceRoutine(updated);
+      persistExercises(updated);
+    }
+    setSwapIndex(null);
+  };
 
   const handleGenerate = async (answers: RoutineAnswers) => {
     const generated = await generateRoutine(answers);
@@ -53,7 +148,14 @@ export default function Dashboard() {
     if (!selectedRoutine) return;
     const updatedExercises = [...selectedRoutine.exercises];
     updatedExercises[index] = { ...updatedExercises[index], [field]: value };
-    setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
+    hasUnsavedEdits.current = true;
+    replaceRoutine({ ...selectedRoutine, exercises: updatedExercises });
+  };
+
+  const handleEditorBlur = () => {
+    if (!hasUnsavedEdits.current || !selectedRoutine) return;
+    hasUnsavedEdits.current = false;
+    persistExercises(selectedRoutine);
   };
 
   return (
@@ -108,19 +210,32 @@ export default function Dashboard() {
 
         {/* Main Content: Interactive Editor */}
         <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          {selectedRoutine ? (
+          {session ? (
+            <WorkoutSession
+              session={session}
+              onChange={updateSession}
+              onFinish={finishWorkout}
+              onSwap={setSwapIndex}
+            />
+          ) : selectedRoutine ? (
             <div>
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start gap-4 mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-white">{selectedRoutine.title}</h2>
                   <p className="text-sm text-slate-400 mt-1">{selectedRoutine.description}</p>
                 </div>
+                <button
+                  onClick={() => startWorkout(selectedRoutine)}
+                  className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2.5 rounded-lg transition"
+                >
+                  Start workout
+                </button>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3" onBlur={handleEditorBlur}>
                 {selectedRoutine.exercises.map((ex, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
-                    <div className="flex-1">
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
+                    <div className="flex-1 min-w-0">
                       <input
                         type="text"
                         value={ex.name}
@@ -135,7 +250,7 @@ export default function Dashboard() {
                         <input
                           type="number"
                           value={ex.sets}
-                          onChange={(e) => handleExerciseChange(i, 'sets', parseInt(e.target.value))}
+                          onChange={(e) => handleExerciseChange(i, 'sets', parseInt(e.target.value) || 1)}
                           className="w-12 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
                         />
                       </div>
@@ -148,6 +263,12 @@ export default function Dashboard() {
                           className="w-16 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
                         />
                       </div>
+                      <button
+                        onClick={() => setSwapIndex(i)}
+                        className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+                      >
+                        Swap
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -161,6 +282,14 @@ export default function Dashboard() {
 
       {showIntake && (
         <IntakeModal onGenerate={handleGenerate} onClose={() => setShowIntake(false)} />
+      )}
+
+      {swapIndex !== null && swapRoutine && (
+        <SwapModal
+          exercise={swapRoutine.exercises[swapIndex]}
+          onSwap={handleSwap}
+          onClose={() => setSwapIndex(null)}
+        />
       )}
     </div>
   );

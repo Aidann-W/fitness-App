@@ -45,3 +45,20 @@ export async function POST(req: Request) {
 
   return NextResponse.json(data);
 }
+
+// PATCH /api/routines - Update the exercises of one of the caller's routines
+export async function PATCH(req: Request) {
+  const supabase = supabaseForRequest(req);
+  if (!supabase) return NextResponse.json(UNAUTHORIZED, { status: 401 });
+
+  const { id, exercises } = await req.json();
+
+  const { error } = await supabase.from('routines').update({ exercises }).eq('id', id);
+
+  if (error) {
+    console.error('Update routine error:', error);
+    return NextResponse.json({ error: 'Could not update routine' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

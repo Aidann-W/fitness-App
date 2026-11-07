@@ -17,3 +17,12 @@ export function supabaseForRequest(req: Request) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+// Confirms the token belongs to a real user, for routes that spend Gemini quota.
+export async function isSignedIn(req: Request) {
+  const token = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!token) return false;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  return !error && Boolean(data.user);
+}
