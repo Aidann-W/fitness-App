@@ -265,13 +265,13 @@ export default function Dashboard() {
     : "Recent sessions are below. Generate again if today should train something else.";
 
   return (
-    <div className="min-h-screen bg-[#e7eef3] font-sans text-slate-800">
-      <header className="border-b border-[#d5e0e8] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-8 py-5">
-          <div className="flex items-baseline gap-3">
-            <span className="text-xl font-semibold tracking-tight text-slate-900">Forge</span>
-            <span className="text-sm text-slate-500">Strength training</span>
-          </div>
+    <div className="cloud-app min-h-screen font-sans text-slate-800">
+      <header className="cloud-header">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">
+          <a href="/" className="brand" aria-label="CumulusFit home">
+<span className="brand-mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M9 23h15a6 6 0 0 0 .3-12 8.5 8.5 0 0 0-16-1A6.5 6.5 0 0 0 9 23Z" stroke="currentColor" strokeWidth="1.8"/><path d="m13 18 3-5 3 5m-3-5v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+<span>Cumulus<span className="brand-fit">Fit</span><small>A little stronger. A little higher.</small></span></a>
+{!session && <nav className="cloud-nav" aria-label="Main navigation"><a href="#training" aria-current="page">Training</a><a href="#routines">My routines</a><a href="#activity">Activity</a></nav>}
           <div className="flex flex-wrap items-center gap-2">
             {!session && account && (
               account.isAnonymous ? (
@@ -303,7 +303,7 @@ export default function Dashboard() {
         </p>
       )}
 
-      <main className="mx-auto max-w-6xl space-y-8 px-8 py-8">
+      <main className="mx-auto max-w-6xl space-y-8 px-5 py-8 sm:px-8">
         {session ? (
           <WorkoutSession
             session={session}
@@ -314,41 +314,33 @@ export default function Dashboard() {
           />
         ) : (
           <>
-            <section className="grid items-stretch gap-6 lg:grid-cols-[1.5fr_0.8fr]">
-              <article className="overflow-hidden rounded-[28px] bg-white shadow-[0_12px_40px_rgba(30,58,82,0.06)]">
-                <div className="grid min-h-72 md:grid-cols-[240px_1fr]">
-                  <div
-                    aria-hidden="true"
-                    className="relative min-h-40 bg-[linear-gradient(160deg,#1e293b_0%,#64748b_55%,#cbd5e1_100%)]"
-                  >
-                    <div className="absolute inset-6 rounded-2xl border border-white/25" />
-                    <p className="absolute bottom-6 left-6 text-sm font-medium tracking-wide text-white/90">Today</p>
-                  </div>
-                  <div className="flex flex-col justify-between gap-6 p-8">
+            <div className="page-heading" id="training"><div><p className="eyebrow">YOUR SPACE TO GROW</p><h1>Reach a little higher.</h1><p>Find your rhythm. Build your strength. Make today count.</p></div><span className="theme-badge"><span aria-hidden="true">✧</span> In the clouds. In your corner.</span></div>
+<section className="grid items-stretch gap-5 lg:grid-cols-[1.65fr_0.85fr]">
+<article className="session-hero"><div className="hero-clouds" aria-hidden="true" /><div className="relative z-[1]"><div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
                     <div>
-                      <p className="text-sm font-medium text-[#3d6d8c]">Today&apos;s session</p>
+                      <p className="hero-label"><span className="live-dot" /> TODAY’S FLIGHT PLAN</p>
                       {selectedRoutine ? (
                         <>
-                          <input
-                            type="text"
+                          <textarea
+                            rows={1}
                             aria-label="Routine name"
                             value={selectedRoutine.title}
                             onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })}
-                            className="mt-2 w-full bg-transparent text-4xl font-semibold tracking-tight text-slate-900 focus:outline-none"
+                            className="hero-title mt-3 w-full bg-transparent text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl"
                           />
-                          <input
-                            type="text"
+                          <textarea
+                            rows={1}
                             aria-label="Routine description"
                             placeholder="Add a short description"
                             value={selectedRoutine.description}
                             onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })}
-                            className="mt-2 w-full bg-transparent text-base text-slate-500 focus:outline-none"
+                            className="hero-description mt-2 w-full bg-transparent text-sm text-slate-600"
                           />
                         </>
                       ) : (
-                        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
+                        <h2 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
                           {loading ? "Loading today's session" : "No session yet"}
-                        </h1>
+                        </h2>
                       )}
                       <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">{focusHint}</p>
                     </div>
@@ -359,7 +351,7 @@ export default function Dashboard() {
                           disabled={!canStart(selectedRoutine)}
                           className="min-h-12 rounded-full bg-slate-900 px-6 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                         >
-                          Start workout
+                          Start workout <span aria-hidden="true" className="ml-3">↗</span>
                         </button>
                         <span className="rounded-full bg-[#e7eef3] px-3 py-1 text-xs font-semibold text-[#3d6d8c]">
                           {selectedRoutine.exercises.length} exercises
@@ -381,11 +373,11 @@ export default function Dashboard() {
                 </div>
               </article>
 
-              <aside className="flex flex-col justify-between rounded-[28px] border border-[#d5e0e8] bg-white p-6">
+              <aside className="generate-card flex flex-col justify-between rounded-[28px] p-6 sm:p-7">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Build today</h2>
+                  <span className="ai-symbol" aria-hidden="true">✧</span><p className="eyebrow mt-5">POWERED BY GEMINI</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Your goals. Your altitude.</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Generate a session from your goal and equipment, or start from a blank list.
+                    A fresh workout, built around your goals, your equipment, and your day.
                   </p>
                 </div>
                 <div className="mt-6 flex flex-col gap-3">
@@ -393,21 +385,21 @@ export default function Dashboard() {
                     onClick={() => setShowIntake(true)}
                     className="min-h-12 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
                   >
-                    Generate
+                    Create with AI <span aria-hidden="true" className="ml-2">✧</span>
                   </button>
                   <button
                     onClick={() => editRoutine({ title: "My Workout", description: "", exercises: [blankExercise] })}
                     className="min-h-12 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6]"
                   >
-                    Build my own
+                    Or build my own
                   </button>
                 </div>
               </aside>
             </section>
 
-            <section>
-              <div className="mb-3 flex items-end justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Exercises</h2>
+            <section className="exercise-section">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+                <h2 className="text-lg font-semibold text-slate-900">The lineup <span className="section-count">{selectedRoutine?.exercises.length ?? 0}</span></h2>
                 <p className="text-sm text-slate-500">Sets, reps, and rest for the session above</p>
               </div>
               {loading ? (
@@ -415,9 +407,9 @@ export default function Dashboard() {
               ) : selectedRoutine ? (
                 <div className="space-y-3">
                   {selectedRoutine.exercises.map((ex, i) => (
-                    <div key={i} className="flex flex-col gap-4 rounded-[24px] border border-[#d5e0e8] bg-white p-4 sm:flex-row sm:items-center">
+                    <div key={i} className="exercise-card flex flex-col gap-4 rounded-[24px] border border-transparent bg-white p-4 sm:flex-row sm:items-center">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e7eef3] text-sm font-semibold text-[#3d6d8c]">
-                        {i + 1}
+                        {String(i + 1).padStart(2, "0")}
                       </span>
                       <div className="min-w-0 flex-1">
                         <input
@@ -503,8 +495,8 @@ export default function Dashboard() {
             </section>
 
             <section className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-3 text-lg font-semibold text-slate-900">Your routines</h2>
+              <div id="routines" className="scroll-mt-6">
+                <p className="eyebrow mb-2">READY WHEN YOU ARE</p><h2 className="mb-4 text-lg font-semibold text-slate-900">Your routines</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {routineCards.map((item, idx) => {
                     const selected = (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title);
@@ -513,22 +505,23 @@ export default function Dashboard() {
                         key={item.id || idx}
                         type="button"
                         onClick={() => setSelectedRoutine(item)}
-                        className={`rounded-[24px] border bg-white p-4 text-left ${
+                        aria-pressed={selected}
+                        className={`routine-card rounded-[24px] border bg-white p-5 text-left ${
                           selected ? "border-[#3d6d8c]" : "border-[#d5e0e8] hover:border-[#b7c9d6]"
                         }`}
                       >
-                        <span className="block font-semibold text-slate-900">{item.title}</span>
+                        <span className="routine-symbol" aria-hidden="true">{idx % 2 === 0 ? "↗" : "◎"}</span><span className="mt-4 block font-semibold text-slate-900">{item.title}</span>
                         <span className="mt-1 block line-clamp-2 text-sm text-slate-500">{item.description}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-              <div>
-                <h2 className="mb-3 text-lg font-semibold text-slate-900">Recent activity</h2>
+              <div id="activity" className="scroll-mt-6">
+                <p className="eyebrow mb-2">EVERY SET ADDS UP</p><h2 className="mb-4 text-lg font-semibold text-slate-900">Recent activity</h2>
                 {recentWorkouts.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-[#b7c9d6] bg-white/70 p-6 text-sm leading-6 text-slate-600">
-                    No completed workouts yet. Finished sets will show here with the date and the exercises you actually logged.
+                    Your next chapter starts with one set. Complete a workout to see your activity take shape here.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -549,6 +542,8 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      <footer className="cloud-footer"><span>CumulusFit</span><p>Grounded in effort. Inspired by the clouds.</p><small>Built at HackRPI 2026</small></footer>
 
       {showIntake && (
         <IntakeModal onGenerate={handleGenerate} onClose={() => setShowIntake(false)} />

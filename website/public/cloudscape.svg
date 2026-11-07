@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" fill="none">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#8ea9d1"/><stop offset=".6" stop-color="#c8d9ed"/><stop offset="1" stop-color="#edf2fa"/></linearGradient><linearGradient id="cloud" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#d9e3f4"/></linearGradient><filter id="soft"><feGaussianBlur stdDeviation="8"/></filter><filter id="haze"><feGaussianBlur stdDeviation="22"/></filter></defs>
+<path fill="url(#sky)" d="M0 0h1000v550H0z"/>
+<g fill="#fff" opacity=".4" filter="url(#haze)"><ellipse cx="820" cy="90" rx="160" ry="25"/><ellipse cx="360" cy="160" rx="200" ry="25"/></g>
+<g fill="url(#cloud)" filter="url(#soft)"><ellipse cx="840" cy="410" rx="250" ry="120"/><ellipse cx="750" cy="350" rx="95" ry="90"/><ellipse cx="900" cy="310" rx="110" ry="110"/><ellipse cx="1020" cy="380" rx="125" ry="115"/><ellipse cx="570" cy="485" rx="200" ry="100"/><ellipse cx="500" cy="442" rx="90" ry="65"/><ellipse cx="690" cy="470" rx="105" ry="90"/><ellipse cx="280" cy="545" rx="280" ry="65"/></g>
+<path d="M660 140h50m-25-25v50" stroke="#fff" stroke-opacity=".65" stroke-width="1"/><circle cx="685" cy="140" r="4" fill="#fff"/>
+<circle cx="910" cy="110" r="2" fill="#fff" opacity=".8"/><circle cx="590" cy="220" r="1.5" fill="#fff" opacity=".7"/>
+</svg>

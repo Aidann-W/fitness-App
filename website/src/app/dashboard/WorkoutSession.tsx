@@ -123,7 +123,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
   };
 
   return (
-    <div className="pb-24">
+    <div className="workout-session pb-24">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900">{session.routine.title}</h2>
@@ -216,7 +216,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.weight}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { weight: e.target.value })}
-                        className="h-11 w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
+                        className="h-11 w-20 sm:w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
                       />
                       </td>
                       <td className="py-2">
@@ -229,7 +229,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.reps}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { reps: e.target.value })}
-                        className="h-11 w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
+                        className="h-11 w-20 sm:w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
                       />
                       </td>
                       <td className="py-2 text-right">

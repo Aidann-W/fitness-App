@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f1f5fa;
+  --foreground: #21334d;
+  --sky: #436b9b;
+  --surface-shadow: 0 0 0 1px oklch(0 0 0 / 0.035), 0 2px 3px -1px oklch(0 0 0 / 0.025), 0 12px 32px -12px rgba(37,66,106,.13);
 }
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body { background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out, opacity 150ms ease-out, box-shadow 150ms ease-out; }
+button:disabled { cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #426b9e; outline-offset: 4px; }
+input, select { accent-color: #456e9d; }
+input:not([type="checkbox"]):not([type="radio"]), select { min-width: 0; }
+.cloud-app { background: radial-gradient(ellipse at 10% 0%, #e2ebf9 0%, transparent 40%), radial-gradient(ellipse at 95% 35%, #e7edf9 0%, transparent 50%), #f5f7fb; }
+.cloud-header { background: rgba(255,255,255,.78); border-bottom: 1px solid #e1e8f1; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #243c5a; font-size: 21px; font-weight: 650; letter-spacing: -.8px; }
+.brand small { display: block; margin-top: 2px; font-size: 10px; font-weight: 450; letter-spacing: .15px; color: #6b7f96; }
+.brand-fit { color: #6488b8; }
+.brand-mark { display: grid; place-items: center; width: 44px; height: 44px; background: #e8eff9; border-radius: 15px; color: #426b9e; }
+.brand-mark svg { width: 32px; height: 32px; }
+.cloud-nav { display: flex; gap: 4px; padding: 4px; border-radius: 99px; background: #edf1f7; }
+.cloud-nav a { text-decoration: none; padding: 10px 17px; color: #64768c; font-size: 12px; font-weight: 550; border: 1px solid transparent; border-radius: 99px; }
+.cloud-nav a[aria-current] { color: #2c496c; background: white; box-shadow: 0 2px 6px #273f5810; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 0 2px; }
+.eyebrow { color: #627d9c; font-size: 10px; font-weight: 650; letter-spacing: 1.8px; }
+.page-heading h1 { margin: 10px 0 8px; font-size: clamp(30px, 4vw, 42px); line-height: 1.15; letter-spacing: -1.8px; font-weight: 550; color: #233b58; }
+.page-heading p:not(.eyebrow) { color: #738297; font-size: 13px; }
+.theme-badge { display: flex; align-items: center; gap: 8px; border: 1px solid #dce5f0; border-radius: 99px; padding: 10px 14px; font-size: 11px; color: #5e7694; white-space: nowrap; }
+.theme-badge span { font-size: 20px; line-height: 1; }
+.session-hero { position: relative; overflow: hidden; border-radius: 28px; background: #d7e5f5; border: 1px solid transparent; box-shadow: var(--surface-shadow); }
+.hero-clouds { position: absolute; inset: 0; background: linear-gradient(90deg,rgba(227,237,249,.94),rgba(221,233,248,.6) 50%, transparent), url('/cloudscape.svg') center / cover; }
+.session-hero > div.relative { min-height: 356px; }
+.session-hero > div.relative > div { min-height: 356px; }
+.hero-label { display: flex; align-items: center; gap: 8px; color: #45698e; font-size: 10px; font-weight: 650; letter-spacing: 1.8px; }
+.live-dot { height: 6px; width: 6px; border-radius: 50%; background: #608cb5; box-shadow: 0 0 0 4px #ffffff55; }
+.hero-title { color: #243c58; letter-spacing: -1.2px; padding: 3px 0; border-radius: 5px; }
+.hero-description { color: #526c88; padding: 3px 0; border-radius: 5px; }
+.hero-title:focus-visible, .hero-description:focus-visible { outline-offset: 3px; }
+.session-hero p.leading-6 { max-width: 310px; color: #60758d; font-size: 12px; }
+.generate-card { background: linear-gradient(150deg,#fff 30%,#f0f3fc); border: 1px solid transparent; box-shadow: var(--surface-shadow); }
+.ai-symbol { display: grid; place-items: center; height: 44px; width: 44px; border-radius: 15px; color: #6c79ae; background: #edf0fc; font-size: 31px; font-weight: 300; }
+.generate-card h2 { max-width: 230px; color: #30415e; }
+.generate-card button:first-child, .session-hero button:first-child { background: #2e4b70; box-shadow: 0 4px 12px #2c466c20; }
+.cloud-app .bg-slate-900, .cloud-dialog .bg-slate-900 { background-color: #2e4b70; }
+.section-count { display: inline-grid; place-items: center; margin-left: 6px; min-width: 23px; height: 23px; border-radius: 8px; background: #e7edf6; color: #637f9e; font-size: 11px; vertical-align: 2px; }
+.exercise-card { box-shadow: var(--surface-shadow); }
+.exercise-card > span { border-radius: 14px; background: #edf2f9; color: #6984a3; font-variant-numeric: tabular-nums; }
+.exercise-card input:not([type="number"]) { border-radius: 5px; }
+.exercise-card label input, .workout-session td input { border-color: #a5b4c6; background: #f5f7fb; }
+.routine-card { box-shadow: var(--surface-shadow); }
+.routine-card[aria-pressed="true"] { background: #edf3fc; border-color: #7896bb; box-shadow: 0 0 0 1px #7896bb; }
+.routine-symbol { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; color: #54769b; background: #e7eef8; font-size: 22px; }
+.cloud-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1088px; margin: 12px auto 0; padding: 25px 0 30px; border-top: 1px solid #dfe6ef; color: #7b8b9e; font-size: 11px; }
+.cloud-footer > span { color: #4c6889; font-weight: 650; font-size: 14px; letter-spacing: -.4px; }
+.cloud-overlay { background: rgba(27,45,70,.35); backdrop-filter: blur(8px); overscroll-behavior: contain; overflow-y: auto; }
+.cloud-dialog { position: relative; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; border-radius: 32px; border: 1px solid transparent; background: linear-gradient(145deg,#fff,#f4f7fd); box-shadow: 0 0 0 1px oklch(0 0 0 / .04), 0 12px 20px -8px #1c345533, 0 35px 100px -20px #192e5770; }
+.cloud-dialog h2 { color: #2b4669; letter-spacing: -.6px; }
+.cloud-dialog input:not([type="checkbox"]), .cloud-dialog select { border-color: #98a9bc; }
+.workout-session section { border-color: transparent; box-shadow: var(--surface-shadow); }
+.workout-session [role="timer"] { background: #f6f9ff; border-color: #bdcde1; box-shadow: 0 5px 24px #2d4e7926; font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  .cloud-nav a:hover { color: #2e4b70; background: #ffffffaa; }
+  .generate-card button:first-child:hover, .session-hero button:first-child:hover, .cloud-app .bg-slate-900:hover, .cloud-dialog .bg-slate-900:hover { background: #3c5d87; }
+  .routine-card:hover { box-shadow: 0 0 0 1px #b5c6dd, 0 8px 24px -12px #294b7940; }
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: no-preference) {
+  button { transition-property: scale, background-color, color, opacity, box-shadow; transition-duration: 150ms; transition-timing-function: ease-out; }
+  button:not(:disabled):not([data-static]):active { scale: .96; }
+  .page-heading { animation: arrive 300ms ease-out both; }
+  .session-hero, .generate-card { animation: arrive 300ms ease-out 100ms both; }
+  @keyframes arrive { from { opacity: 0; filter: blur(4px); transform: translateY(12px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-heading, .session-hero, .generate-card { animation: fade-in 150ms ease-out both; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+}
+@media (max-width: 767px) {
+  .cloud-header > div { gap: 14px; }
+  .brand { font-size: 19px; }
+  .cloud-nav { order: 3; width: 100%; justify-content: center; }
+  .cloud-nav a { flex: 1; text-align: center; }
+  .page-heading { padding-top: 0; }
+  .theme-badge { display: none; }
+  .page-heading h1 { letter-spacing: -1px; }
+  .session-hero > div.relative, .session-hero > div.relative > div { min-height: 320px; }
+  .hero-clouds { background-position: 65% center; }
+  .cloud-footer { margin: 0 20px; flex-wrap: wrap; }
+  .cloud-footer p { order: 3; width: 100%; }
+  .workout-session th, .workout-session td { font-size: 11px; }
+  .workout-session td button { padding-inline: 10px; }
+}
+/* Editable headings grow with their content instead of clipping on phones. */
+.hero-title, .hero-description { display: block; resize: none; field-sizing: content; overflow-wrap: anywhere; }
+.workout-session th:first-child, .workout-session td:first-child { padding-right: 8px; }
+@media (max-width: 380px) {
+  .workout-session td input { width: 64px; }
 }
