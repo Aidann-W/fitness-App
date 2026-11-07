@@ -1,22 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   fetchRoutines,
+  fetchSetLogs,
   generateRoutine,
   saveRoutine,
   swapExercise,
   updateRoutineExercises,
 } from '@/lib/api';
+import { formatSet, lastSetsByExercise, summarizeWorkouts } from '@/lib/history';
 import { starterPresets } from '@/lib/mockData';
 import { readJson, writeJson } from '@/lib/storage';
-import type { ActiveSession, Exercise, RoutineAnswers, WorkoutRoutine } from '@/lib/types';
+import type {
+  ActiveSession,
+  Exercise,
+  LoggedSet,
+  RoutineAnswers,
+  WorkoutRoutine,
+} from '@/lib/types';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 import WorkoutSession from './WorkoutSession';
 
 const ROUTINES_KEY = 'cumulusfit.routines';
 const SESSION_KEY = 'cumulusfit.activeSession';
+const LOGS_KEY = 'cumulusfit.setLogs';
 
 // Presets and unsaved routines have no row in Supabase to update.
 const isStored = (routine: WorkoutRoutine) =>
@@ -30,7 +39,25 @@ export default function Dashboard() {
   const [notice, setNotice] = useState<string | null>(null);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
+  const [logs, setLogs] = useState<LoggedSet[]>([]);
   const hasUnsavedEdits = useRef(false);
+
+  const lastSets = useMemo(
+    () => lastSetsByExercise(logs, session?.sessionId),
+    [logs, session?.sessionId]
+  );
+  const recentWorkouts = useMemo(() => summarizeWorkouts(logs).slice(0, 5), [logs]);
+
+  const loadLogs = async () => {
+    try {
+      const saved = await fetchSetLogs();
+      writeJson(LOGS_KEY, saved);
+      setLogs(saved);
+    } catch (err) {
+      console.error('Failed to load workout history:', err);
+      setLogs(readJson<LoggedSet[]>(LOGS_KEY) ?? []);
+    }
+  };
 
   // Fetch the user's saved routines on load. Presets are always available.
   useEffect(() => {
@@ -56,6 +83,7 @@ export default function Dashboard() {
     }
     setSession(readJson<ActiveSession>(SESSION_KEY));
     loadRoutines();
+    loadLogs();
   }, []);
 
   const replaceRoutine = (updated: WorkoutRoutine) => {
@@ -68,9 +96,20 @@ export default function Dashboard() {
   };
 
   const persistExercises = async (routine: WorkoutRoutine) => {
-    if (!isStored(routine)) return;
     try {
-      await updateRoutineExercises(routine.id!, routine.exercises);
+      if (isStored(routine)) {
+        await updateRoutineExercises(routine.id!, routine.exercises);
+        return;
+      }
+
+      // Presets are shared, so editing one saves a personal copy.
+      const saved = await saveRoutine(routine);
+      setSelectedRoutine(saved);
+      setRoutines((prev) => {
+        const next = [saved, ...prev.filter((r) => r.id || r.title !== routine.title)];
+        writeJson(ROUTINES_KEY, next);
+        return next;
+      });
     } catch (err) {
       console.error('Failed to save edits:', err);
       setNotice('Your edits could not be saved. They will be lost if you refresh.');
@@ -98,9 +137,14 @@ export default function Dashboard() {
     setSession(next);
   };
 
-  const finishWorkout = () => {
+  const finishWorkout = async () => {
+    const setCount = session
+      ? Object.values(session.sets).filter((entry) => entry.done).length
+      : 0;
     writeJson(SESSION_KEY, null);
     setSession(null);
+    setNotice(`Workout finished. ${setCount} set(s) saved.`);
+    await loadLogs();
   };
 
   const swapRoutine = session?.routine ?? selectedRoutine;
@@ -193,7 +237,7 @@ export default function Dashboard() {
                 key={item.id || idx}
                 onClick={() => setSelectedRoutine(item)}
                 className={`p-4 rounded-xl border cursor-pointer transition ${
-                  selectedRoutine?.title === item.title
+                  (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title)
                     ? 'border-blue-500 bg-blue-950/30'
                     : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
                 }`}
@@ -206,6 +250,21 @@ export default function Dashboard() {
               </div>
             ))
           )}
+
+          {recentWorkouts.length > 0 && (
+            <>
+              <h2 className="text-lg font-semibold text-slate-300 pt-4">Recent Workouts</h2>
+              {recentWorkouts.map((workout) => (
+                <div key={workout.sessionId} className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
+                  <p className="text-sm font-semibold text-white">
+                    {new Date(workout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {' · '}{workout.setCount} set(s)
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">{workout.exercises.join(', ')}</p>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Main Content: Interactive Editor */}
@@ -213,6 +272,7 @@ export default function Dashboard() {
           {session ? (
             <WorkoutSession
               session={session}
+              lastSets={lastSets}
               onChange={updateSession}
               onFinish={finishWorkout}
               onSwap={setSwapIndex}
@@ -243,6 +303,11 @@ export default function Dashboard() {
                         className="bg-transparent text-white font-semibold focus:outline-none focus:border-blue-500 border-b border-transparent w-full"
                       />
                       {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
+                      {lastSets[ex.name] && (
+                        <p className="text-xs text-blue-300 mt-1">
+                          Last time: {lastSets[ex.name].map(formatSet).join(', ')}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <div className="text-center">

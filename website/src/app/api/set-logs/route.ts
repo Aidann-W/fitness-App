@@ -3,6 +3,25 @@ import { supabaseForRequest } from '@/lib/supabase';
 
 const UNAUTHORIZED = { error: 'Not signed in' };
 
+// GET /api/set-logs - The caller's most recent sets, newest first
+export async function GET(req: Request) {
+  const supabase = supabaseForRequest(req);
+  if (!supabase) return NextResponse.json(UNAUTHORIZED, { status: 401 });
+
+  const { data, error } = await supabase
+    .from('set_logs')
+    .select('session_id, routine_id, exercise_name, set_index, reps, weight, unit, completed_at')
+    .order('completed_at', { ascending: false })
+    .limit(500);
+
+  if (error) {
+    console.error('Load sets error:', error);
+    return NextResponse.json({ error: 'Could not load workout history' }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}
+
 // POST /api/set-logs - Record a completed set. Retrying the same set is safe.
 export async function POST(req: Request) {
   const supabase = supabaseForRequest(req);

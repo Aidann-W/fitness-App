@@ -48,3 +48,7 @@ export interface SetLog {
   weight: number;
   unit: 'lb' | 'kg';
 }
+
+export interface LoggedSet extends SetLog {
+  completed_at: string;
+}

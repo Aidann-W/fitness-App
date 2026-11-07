@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Exercise, RoutineAnswers, SetLog, WorkoutRoutine } from './types';
+import type { Exercise, LoggedSet, RoutineAnswers, SetLog, WorkoutRoutine } from './types';
 
 async function loadAccessToken() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -67,6 +67,10 @@ export function swapExercise(exercise: Exercise, others: string[], reason: strin
     method: 'POST',
     body: JSON.stringify({ exercise, others, reason }),
   });
+}
+
+export function fetchSetLogs() {
+  return request<LoggedSet[]>('/api/set-logs');
 }
 
 export function logSet(log: SetLog) {

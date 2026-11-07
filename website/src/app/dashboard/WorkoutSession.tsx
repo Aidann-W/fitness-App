@@ -2,25 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { deleteSetLog, logSet } from '@/lib/api';
-import type { ActiveSession, Exercise, SetEntry } from '@/lib/types';
+import { formatSet } from '@/lib/history';
+import type { ActiveSession, Exercise, LoggedSet, SetEntry } from '@/lib/types';
 
 const setKey = (exerciseName: string, index: number) => `${exerciseName}:${index}`;
 
-const emptyEntry = (exercise: Exercise): SetEntry => ({
-  reps: String(parseInt(exercise.reps) || ''),
-  weight: '',
+// Starts from what was lifted last time, otherwise the plan. Weight stays blank
+// with no history, because the app should not invent a starting load.
+const emptyEntry = (exercise: Exercise, previous?: LoggedSet): SetEntry => ({
+  reps: String(previous?.reps ?? (parseInt(exercise.reps) || '')),
+  weight: previous && previous.weight > 0 ? String(previous.weight) : '',
   done: false,
   unsaved: false,
 });
 
 interface Props {
   session: ActiveSession;
+  lastSets: Record<string, LoggedSet[]>;
   onChange: (update: (prev: ActiveSession) => ActiveSession) => void;
   onFinish: () => void;
   onSwap: (index: number) => void;
 }
 
-export default function WorkoutSession({ session, onChange, onFinish, onSwap }: Props) {
+export default function WorkoutSession({ session, lastSets, onChange, onFinish, onSwap }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -35,14 +39,19 @@ export default function WorkoutSession({ session, onChange, onFinish, onSwap }: 
 
   const restLeft = restEndsAt ? Math.ceil((restEndsAt - now) / 1000) : 0;
 
+  const defaultEntry = (exercise: Exercise, index: number) => {
+    const previous = lastSets[exercise.name];
+    return emptyEntry(exercise, previous?.[index] ?? previous?.at(-1));
+  };
+
   const entryFor = (exercise: Exercise, index: number) =>
-    session.sets[setKey(exercise.name, index)] ?? emptyEntry(exercise);
+    session.sets[setKey(exercise.name, index)] ?? defaultEntry(exercise, index);
 
   const updateEntry = (exercise: Exercise, index: number, changes: Partial<SetEntry>) => {
     const key = setKey(exercise.name, index);
     onChange((prev) => ({
       ...prev,
-      sets: { ...prev.sets, [key]: { ...(prev.sets[key] ?? emptyEntry(exercise)), ...changes } },
+      sets: { ...prev.sets, [key]: { ...(prev.sets[key] ?? defaultEntry(exercise, index)), ...changes } },
     }));
   };
 
@@ -99,6 +108,20 @@ export default function WorkoutSession({ session, onChange, onFinish, onSwap }: 
     unsavedSets.forEach(({ exercise, index }) => saveSet(exercise, index, entryFor(exercise, index)));
   };
 
+  // Sets the user typed into but never confirmed would be lost on finish.
+  const unconfirmedSets = Object.values(session.sets).filter((entry) => !entry.done).length;
+
+  const handleFinish = () => {
+    if (
+      unconfirmedSets === 0 ||
+      window.confirm(
+        `${unconfirmedSets} set(s) you edited aren't marked Done and won't be saved. Finish anyway?`
+      )
+    ) {
+      onFinish();
+    }
+  };
+
   return (
     <div className="pb-24">
       <div className="flex justify-between items-start gap-4 mb-6">
@@ -107,7 +130,7 @@ export default function WorkoutSession({ session, onChange, onFinish, onSwap }: 
           <p className="text-sm text-slate-400 mt-1">Workout in progress</p>
         </div>
         <button
-          onClick={onFinish}
+          onClick={handleFinish}
           disabled={unsavedSets.length > 0}
           className="shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
         >
@@ -140,6 +163,11 @@ export default function WorkoutSession({ session, onChange, onFinish, onSwap }: 
                     {exercise.sets} × {exercise.reps}, {exercise.rest_seconds}s rest
                   </p>
                   {exercise.notes && <p className="text-xs text-slate-500 mt-0.5">{exercise.notes}</p>}
+                  {lastSets[exercise.name] && (
+                    <p className="text-xs text-blue-300 mt-1">
+                      Last time: {lastSets[exercise.name].map(formatSet).join(', ')}
+                    </p>
+                  )}
                 </div>
                 {!started && (
                   <button
