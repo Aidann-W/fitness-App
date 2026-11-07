@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import './WorkoutSession.css';
 import { deleteSetLog, logSet } from '@/lib/api';
 import { formatSet, formatTarget, nextTarget, type Target } from '@/lib/history';
 import type { ActiveSession, Exercise, LoggedSet, SetEntry } from '@/lib/types';
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function WorkoutSession({ session, lastSets, onChange, onFinish, onSwap }: Props) {
+  const [selectedExercise, setSelectedExercise] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -92,6 +94,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
     updateEntry(exercise, index, { done: true, unsaved: true });
     onChange((prev) => ({ ...prev, restEndsAt: Date.now() + exercise.rest_seconds * 1000 }));
     saveSet(exercise, index, entry);
+    if (Array.from({ length: exercise.sets }, (_, i) => i === index || entryFor(exercise, i).done).every(Boolean)) setSelectedExercise(null);
   };
 
   const undoSet = async (exercise: Exercise, index: number) => {
@@ -136,160 +139,37 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
     }
   };
 
-  return (
-    <div className="workout-session pb-24">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-slate-900">{session.routine.title}</h2>
-          <p className="mt-1 text-sm text-slate-500">Workout in progress</p>
-        </div>
-        <button
-          onClick={handleFinish}
-          disabled={unsavedSets.length > 0}
-          className="shrink-0 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-        >
-          Finish
-        </button>
+
+  const exercises = session.routine.exercises;
+  const firstUnfinished = exercises.findIndex((exercise) => Array.from({ length: exercise.sets }, (_, i) => !entryFor(exercise, i).done).some(Boolean));
+  const currentIndex = selectedExercise !== null && exercises[selectedExercise] ? selectedExercise : Math.max(0, firstUnfinished);
+  const current = exercises[currentIndex];
+  const totalSets = exercises.reduce((total, exercise) => total + exercise.sets, 0);
+  const completedSets = exercises.reduce((total, exercise) => total + Array.from({ length: exercise.sets }, (_, i) => entryFor(exercise, i).done).filter(Boolean).length, 0);
+  const progress = totalSets ? Math.round(completedSets / totalSets * 100) : 0;
+  const nextSet = current ? Array.from({ length: current.sets }, (_, i) => i).find((i) => !entryFor(current, i).done) : undefined;
+  const validEntry = (entry: SetEntry) => Number.isFinite(Number(entry.reps)) && Number(entry.reps) > 0 && Number.isFinite(Number(entry.weight)) && Number(entry.weight) >= 0;
+  const started = current && Array.from({ length: current.sets }, (_, i) => entryFor(current, i).done).some(Boolean);
+
+  return <div className="workout-session focus-session">
+    <header className="session-heading"><div><p className="eyebrow">WORKOUT IN PROGRESS</p><h2>{session.routine.title}</h2></div><button className="session-finish" onClick={handleFinish} disabled={unsavedSets.length > 0}>Finish workout</button></header>
+    <div className="session-overview" aria-label="Session overview"><div><span>Exercises</span><strong>{exercises.length}</strong></div><div><span>Working sets</span><strong>{totalSets}</strong></div><div><span>Completed</span><strong>{completedSets}<small> / {totalSets}</small></strong></div><div className="session-progress"><span>{progress}% complete</span><div role="progressbar" aria-label="Workout completion" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><div style={{width: progress+'%'}}/></div></div></div>
+    {unsavedSets.length > 0 && <div role="status" className="session-warning"><span>{unsavedSets.length} set(s) waiting to sync. Kept on this device.</span><button onClick={retryUnsaved}>Retry saving</button></div>}
+    {error && <p role="alert" className="session-error">{error}</p>}
+    <div className="session-workspace">
+      <div className="current-workspace">
+      {current ? <>
+        <div className="exercise-stage"><div className="stage-copy"><p className="eyebrow">EXERCISE {String(currentIndex+1).padStart(2,'0')} / {String(exercises.length).padStart(2,'0')}</p><h3>{current.name}</h3><div className="stage-tags"><span>{current.sets} sets</span><span>{current.reps} reps</span><span>{current.rest_seconds}s rest</span></div>{current.notes && <p className="stage-note">{current.notes}</p>}{!started && <button className="stage-swap" onClick={()=>onSwap(currentIndex)}>Swap exercise</button>}</div><div className="stage-art" aria-hidden="true"><div className="stage-orbit"/><svg viewBox="0 0 160 160" fill="none"><g transform="rotate(-32 80 80)" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"><path d="M53 80h54M24 80h14m84 0h14"/><rect x="38" y="49" width="15" height="62" rx="6"/><rect x="107" y="49" width="15" height="62" rx="6"/><path d="M31 62v36m98-36v36"/></g></svg></div></div>
+        <section className="set-logger" aria-labelledby="set-logger-title"><div className="logger-heading"><h3 id="set-logger-title">Your sets</h3><span>{nextSet === undefined ? 'All sets complete' : 'Up next: set '+(nextSet+1)}</span></div>
+          {lastSets[current.name] && <p className="previous-sets">Last session: {lastSets[current.name].map(formatSet).join(', ')}</p>}
+          <TargetLine target={nextTarget(lastSets[current.name],current.reps)} />
+          <table className="set-table"><thead><tr><th>Set</th><th>Weight <span>(lb)</span></th><th>Reps</th><th>Status</th></tr></thead><tbody>{Array.from({length:current.sets},(_,index)=>{const entry=entryFor(current,index);const label=current.name+' set '+(index+1);return <tr key={label} data-completed={entry.done}><td><span className="set-number">{String(index+1).padStart(2,'0')}</span></td><td><input aria-label={label+' weight in pounds'} type="number" inputMode="decimal" min="0" step="any" placeholder="—" value={entry.weight} disabled={entry.done} onChange={e=>updateEntry(current,index,{weight:e.target.value})}/></td><td><input aria-label={label+' reps'} type="number" inputMode="numeric" min="1" value={entry.reps} disabled={entry.done} onChange={e=>updateEntry(current,index,{reps:e.target.value})}/></td><td><button className={entry.done?'set-done':'set-complete'} aria-label={(entry.done?'Undo ':'Complete ')+label} onClick={()=>entry.done?undoSet(current,index):completeSet(current,index)} disabled={!entry.done && !validEntry(entry)}>{entry.done ? '✓ Done' : 'Log set'}</button></td></tr>})}</tbody></table>
+          <div className="session-rest" role={restLeft > 0 ? 'timer' : undefined}><div><span className="rest-symbol" aria-hidden="true">◷</span><div><strong>{restLeft > 0 ? Math.floor(restLeft/60)+':'+String(restLeft%60).padStart(2,'0') : 'Ready when you are'}</strong><p>{restLeft > 0 ? 'Rest before your next set' : current.rest_seconds+'s rest after each set'}</p></div></div>{restLeft > 0 && <div className="rest-actions"><button onClick={()=>onChange(prev=>({...prev,restEndsAt:(prev.restEndsAt ?? Date.now())+30000}))}>+30s</button><button onClick={()=>onChange(prev=>({...prev,restEndsAt:null}))}>Skip rest</button></div>}</div>
+        </section>
+        <div className="session-bottom-actions">{nextSet !== undefined ? <button className="session-primary" disabled={!validEntry(entryFor(current,nextSet))} onClick={()=>completeSet(current,nextSet)}>Log set {nextSet+1}</button> : <span className="exercise-completed">✓ Exercise complete</span>}{currentIndex < exercises.length-1 && <button className="next-exercise" onClick={()=>setSelectedExercise(currentIndex+1)}>Next exercise <span aria-hidden="true">→</span></button>}</div>
+      </> : <p className="session-warning">This workout has no exercises. Finish it to create another workout.</p>}
       </div>
-
-      {unsavedSets.length > 0 && (
-        <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-          <span>{unsavedSets.length} set(s) not saved yet. They&apos;re safe on this device.</span>
-          <button onClick={retryUnsaved} className="shrink-0 min-h-11 px-3 font-medium underline">
-            Retry
-          </button>
-        </div>
-      )}
-      {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
-
-      <div className="space-y-4">
-        {session.routine.exercises
-          .map((exercise, exerciseIndex) => ({ exercise, exerciseIndex }))
-          .sort((a, b) => {
-            const unfinished = (exercise: Exercise) =>
-              Array.from({ length: exercise.sets }).some((_, index) => !entryFor(exercise, index).done);
-            return Number(!unfinished(a.exercise)) - Number(!unfinished(b.exercise));
-          })
-          .map(({ exercise, exerciseIndex }, visualIndex) => {
-          const started = Array.from({ length: exercise.sets }).some(
-            (_, index) => entryFor(exercise, index).done
-          );
-          const current = visualIndex === 0;
-
-          return (
-            <section key={exercise.name} className={`rounded-[28px] border border-[#d5e0e8] bg-white p-5 ${current ? "shadow-[0_12px_40px_rgba(30,58,82,0.06)]" : ""}`}>
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  {current && <p className="text-sm font-medium text-[#3d6d8c]">Now</p>}
-                  <h3 className={`${current ? "text-2xl" : "text-lg"} font-semibold text-slate-900`}>{exercise.name}</h3>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {exercise.sets} × {exercise.reps}, {exercise.rest_seconds}s rest
-                  </p>
-                  {exercise.notes && <p className="mt-0.5 text-xs text-slate-500">{exercise.notes}</p>}
-                  {lastSets[exercise.name] && (
-                    <p className="mt-1 text-xs text-[#3d6d8c]">
-                      Last time: {lastSets[exercise.name].map(formatSet).join(', ')}
-                    </p>
-                  )}
-                  <TargetLine target={nextTarget(lastSets[exercise.name], exercise.reps)} />
-                </div>
-                {!started && (
-                  <button
-                    onClick={() => onSwap(exerciseIndex)}
-                    className="shrink-0 min-h-11 px-3 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
-                  >
-                    Swap
-                  </button>
-                )}
-              </div>
-
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="pb-2 font-medium">Set</th>
-                    <th className="pb-2 font-medium">Weight</th>
-                    <th className="pb-2 font-medium">Reps</th>
-                    <th className="pb-2 text-right font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {Array.from({ length: exercise.sets }, (_, index) => {
-                  const entry = entryFor(exercise, index);
-                  const label = `${exercise.name} set ${index + 1}`;
-
-                  return (
-                    <tr key={index} className="border-t border-[#e6eef3] text-slate-700">
-                      <td className="py-2 text-slate-500">{index + 1}</td>
-                      <td className="py-2">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="any"
-                        placeholder="lb"
-                        aria-label={`${label} weight in pounds`}
-                        value={entry.weight}
-                        disabled={entry.done}
-                        onChange={(e) => updateEntry(exercise, index, { weight: e.target.value })}
-                        className="h-11 w-20 sm:w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
-                      />
-                      </td>
-                      <td className="py-2">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min="0"
-                        placeholder="reps"
-                        aria-label={`${label} reps`}
-                        value={entry.reps}
-                        disabled={entry.done}
-                        onChange={(e) => updateEntry(exercise, index, { reps: e.target.value })}
-                        className="h-11 w-20 sm:w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
-                      />
-                      </td>
-                      <td className="py-2 text-right">
-                      <button
-                        onClick={() => (entry.done ? undoSet(exercise, index) : completeSet(exercise, index))}
-                        disabled={!entry.done && entry.reps === ''}
-                        aria-label={entry.done ? `Undo ${label}` : `Complete ${label}`}
-                        className={`min-h-11 rounded-full px-4 font-semibold disabled:opacity-50 ${
-                          entry.done ? 'bg-[#e7eef3] text-[#1e4a66]' : 'bg-slate-900 text-white'
-                        }`}
-                      >
-                        {entry.done ? 'Done' : 'Mark done'}
-                      </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                </tbody>
-              </table>
-            </section>
-          );
-        })}
-      </div>
-
-      {restLeft > 0 && (
-        <div role="timer" className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-[#d5e0e8] bg-white px-5 py-2 text-slate-900 shadow-[0_12px_40px_rgba(30,58,82,0.12)]">
-          <span className="font-semibold">
-            Rest {Math.floor(restLeft / 60)}:{String(restLeft % 60).padStart(2, '0')}
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onChange((prev) => ({ ...prev, restEndsAt: (prev.restEndsAt ?? Date.now()) + 30_000 }))}
-              className="min-h-11 px-3 text-sm"
-            >
-              +30s
-            </button>
-            <button
-              onClick={() => onChange((prev) => ({ ...prev, restEndsAt: null }))}
-              className="min-h-11 px-3 text-sm font-medium"
-            >
-              Skip
-            </button>
-          </div>
-        </div>
-      )}
+      <aside className="exercise-queue" aria-labelledby="queue-heading"><div className="queue-heading"><h3 id="queue-heading">Workout plan</h3><span>{exercises.length} exercises</span></div><ol>{exercises.map((exercise,i)=>{const done=Array.from({length:exercise.sets},(_,j)=>entryFor(exercise,j).done).filter(Boolean).length;return <li key={exercise.name}><button aria-current={i===currentIndex?'step':undefined} onClick={()=>setSelectedExercise(i)}><span className="queue-marker">{done===exercise.sets?'✓':String(i+1).padStart(2,'0')}</span><span className="queue-details"><strong>{exercise.name}</strong><small>{exercise.sets} × {exercise.reps} · {exercise.rest_seconds}s rest</small><span>{done===exercise.sets?'Complete':done>0?done+' of '+exercise.sets+' sets logged':i===currentIndex?'Current exercise':'Not started'}</span></span></button></li>})}</ol><p className="queue-help">Choose any exercise to view its sets. Moving ahead won’t mark unfinished sets complete.</p></aside>
     </div>
-  );
+  </div>;
 }
