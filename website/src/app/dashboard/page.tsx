@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { getAccount, logOut, type Account } from '@/lib/account';
 import {
+  deleteRoutine,
   fetchRoutines,
   fetchSetLogs,
   generateRoutine,
   saveRoutine,
   swapExercise,
-  updateRoutineExercises,
+  updateRoutine,
 } from '@/lib/api';
 import { formatSet, lastSetsByExercise, summarizeWorkouts } from '@/lib/history';
 import { starterPresets } from '@/lib/mockData';
@@ -19,6 +21,7 @@ import type {
   RoutineAnswers,
   WorkoutRoutine,
 } from '@/lib/types';
+import AccountModal from './AccountModal';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 import WorkoutSession from './WorkoutSession';
@@ -26,6 +29,16 @@ import WorkoutSession from './WorkoutSession';
 const ROUTINES_KEY = 'cumulusfit.routines';
 const SESSION_KEY = 'cumulusfit.activeSession';
 const LOGS_KEY = 'cumulusfit.setLogs';
+
+const AUTOSAVE_DELAY_MS = 600;
+
+const blankExercise: Exercise = { name: '', sets: 3, reps: '10', rest_seconds: 60, notes: '' };
+
+// A workout tracks sets by exercise name, so names must be filled in and unique.
+const canStart = (routine: WorkoutRoutine) => {
+  const names = routine.exercises.map((exercise) => exercise.name.trim());
+  return names.length > 0 && names.every(Boolean) && new Set(names).size === names.length;
+};
 
 // Presets and unsaved routines have no row in Supabase to update.
 const isStored = (routine: WorkoutRoutine) =>
@@ -40,7 +53,9 @@ export default function Dashboard() {
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [logs, setLogs] = useState<LoggedSet[]>([]);
-  const hasUnsavedEdits = useRef(false);
+  const [pendingSave, setPendingSave] = useState<WorkoutRoutine | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [showAccount, setShowAccount] = useState(false);
 
   const lastSets = useMemo(
     () => lastSetsByExercise(logs, session?.sessionId),
@@ -82,37 +97,79 @@ export default function Dashboard() {
       }
     }
     setSession(readJson<ActiveSession>(SESSION_KEY));
-    loadRoutines();
+    // Routines load first because that is what starts the anonymous session.
+    loadRoutines().then(() => getAccount()).then(setAccount);
     loadLogs();
   }, []);
 
-  const replaceRoutine = (updated: WorkoutRoutine) => {
-    setSelectedRoutine(updated);
+  // Autosave once typing pauses.
+  useEffect(() => {
+    if (!pendingSave) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        await updateRoutine(pendingSave);
+      } catch (err) {
+        console.error('Failed to save edits:', err);
+        setNotice('Your edits could not be saved. They will be lost if you refresh.');
+      }
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [pendingSave]);
+
+  // Every edit to a routine goes through here. Presets are shared, so the first
+  // edit makes a personal copy with its own id.
+  const editRoutine = (updated: WorkoutRoutine) => {
+    const stored = isStored(updated);
+    const preset = starterPresets.find((p) => p.id === updated.id);
+    const routine = stored
+      ? updated
+      : {
+          ...updated,
+          id: crypto.randomUUID(),
+          title: updated.title === preset?.title ? `${updated.title} (my copy)` : updated.title,
+        };
+
+    setSelectedRoutine(routine);
     setRoutines((prev) => {
-      const next = prev.map((routine) => (routine.id === updated.id ? updated : routine));
+      const next = stored
+        ? prev.map((r) => (r.id === routine.id ? routine : r))
+        : [routine, ...prev.filter((r) => r.id || r !== selectedRoutine)];
       writeJson(ROUTINES_KEY, next);
       return next;
     });
+    setPendingSave(routine);
   };
 
-  const persistExercises = async (routine: WorkoutRoutine) => {
-    try {
-      if (isStored(routine)) {
-        await updateRoutineExercises(routine.id!, routine.exercises);
-        return;
-      }
+  const handleDeleteRoutine = async (routine: WorkoutRoutine) => {
+    if (!window.confirm(`Delete "${routine.title}"? Your logged sets will be kept.`)) return;
 
-      // Presets are shared, so editing one saves a personal copy.
-      const saved = await saveRoutine(routine);
-      setSelectedRoutine(saved);
-      setRoutines((prev) => {
-        const next = [saved, ...prev.filter((r) => r.id || r.title !== routine.title)];
-        writeJson(ROUTINES_KEY, next);
-        return next;
-      });
+    try {
+      setPendingSave(null);
+      await deleteRoutine(routine.id!);
+      const next = routines.filter((r) => r.id !== routine.id);
+      writeJson(ROUTINES_KEY, next);
+      setRoutines(next);
+      setSelectedRoutine(next[0] ?? starterPresets[0]);
     } catch (err) {
-      console.error('Failed to save edits:', err);
-      setNotice('Your edits could not be saved. They will be lost if you refresh.');
+      console.error('Failed to delete routine:', err);
+      setNotice('Could not delete that routine. Please try again.');
+    }
+  };
+
+  const reloadAfterAccountChange = () => {
+    [ROUTINES_KEY, LOGS_KEY, SESSION_KEY].forEach((key) => writeJson(key, null));
+    window.location.reload();
+  };
+
+  const handleLogOut = async () => {
+    try {
+      await logOut();
+      reloadAfterAccountChange();
+    } catch (err) {
+      console.error('Failed to log out:', err);
+      setNotice('Could not log out. Please try again.');
     }
   };
 
@@ -164,8 +221,7 @@ export default function Dashboard() {
     if (session) {
       updateSession((prev) => ({ ...prev, routine: updated }));
     } else {
-      replaceRoutine(updated);
-      persistExercises(updated);
+      editRoutine(updated);
     }
     setSwapIndex(null);
   };
@@ -192,31 +248,62 @@ export default function Dashboard() {
     if (!selectedRoutine) return;
     const updatedExercises = [...selectedRoutine.exercises];
     updatedExercises[index] = { ...updatedExercises[index], [field]: value };
-    hasUnsavedEdits.current = true;
-    replaceRoutine({ ...selectedRoutine, exercises: updatedExercises });
+    editRoutine({ ...selectedRoutine, exercises: updatedExercises });
   };
 
-  const handleEditorBlur = () => {
-    if (!hasUnsavedEdits.current || !selectedRoutine) return;
-    hasUnsavedEdits.current = false;
-    persistExercises(selectedRoutine);
+  const removeExercise = (index: number) => {
+    if (!selectedRoutine) return;
+    editRoutine({
+      ...selectedRoutine,
+      exercises: selectedRoutine.exercises.filter((_, i) => i !== index),
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
-      <header className="max-w-6xl mx-auto flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
+      <header className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-sky-300 bg-clip-text text-transparent">
             CumulusFit Dashboard
           </h1>
           <p className="text-slate-400 text-sm">Cloud-Synced Workout Routines & AI Adaptation</p>
         </div>
-        <button 
-          onClick={() => setShowIntake(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition"
-        >
-          + Generate with Gemini AI
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {!session && account && (
+            account.isAnonymous ? (
+              <button
+                onClick={() => setShowAccount(true)}
+                className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+              >
+                Save your progress
+              </button>
+            ) : (
+              <>
+                <span className="text-sm text-slate-400">{account.email}</span>
+                <button
+                  onClick={handleLogOut}
+                  className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+                >
+                  Log out
+                </button>
+              </>
+            )
+          )}
+          <button
+            onClick={() => editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] })}
+            disabled={Boolean(session)}
+            className="min-h-11 px-4 py-2 rounded-lg border border-slate-700 text-slate-200 hover:border-slate-500 disabled:opacity-50 transition"
+          >
+            Build my own
+          </button>
+          <button
+            onClick={() => setShowIntake(true)}
+            disabled={Boolean(session)}
+            className="min-h-11 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2 rounded-lg transition"
+          >
+            + Generate with Gemini AI
+          </button>
+        </div>
       </header>
 
       {notice && (
@@ -279,25 +366,57 @@ export default function Dashboard() {
             />
           ) : selectedRoutine ? (
             <div>
-              <div className="flex justify-between items-start gap-4 mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedRoutine.title}</h2>
-                  <p className="text-sm text-slate-400 mt-1">{selectedRoutine.description}</p>
+              <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
+                <div className="flex-1 min-w-48">
+                  <input
+                    type="text"
+                    aria-label="Routine name"
+                    value={selectedRoutine.title}
+                    onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })}
+                    className="w-full bg-transparent text-2xl font-bold text-white focus:outline-none border-b border-transparent focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    aria-label="Routine description"
+                    placeholder="Add a description"
+                    value={selectedRoutine.description}
+                    onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })}
+                    className="w-full bg-transparent text-sm text-slate-400 mt-1 focus:outline-none border-b border-transparent focus:border-blue-500"
+                  />
                 </div>
-                <button
-                  onClick={() => startWorkout(selectedRoutine)}
-                  className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2.5 rounded-lg transition"
-                >
-                  Start workout
-                </button>
+                <div className="flex items-center gap-2">
+                  {isStored(selectedRoutine) && (
+                    <button
+                      onClick={() => handleDeleteRoutine(selectedRoutine)}
+                      className="min-h-11 px-3 text-sm text-slate-400 hover:text-red-300"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <button
+                    onClick={() => startWorkout(selectedRoutine)}
+                    disabled={!canStart(selectedRoutine)}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
+                  >
+                    Start workout
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3" onBlur={handleEditorBlur}>
+              {!canStart(selectedRoutine) && (
+                <p className="text-sm text-amber-200 mb-3">
+                  Give every exercise a different name to start this workout.
+                </p>
+              )}
+
+              <div className="space-y-3">
                 {selectedRoutine.exercises.map((ex, i) => (
                   <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
                     <div className="flex-1 min-w-0">
                       <input
                         type="text"
+                        aria-label={`Exercise ${i + 1} name`}
+                        placeholder="Exercise name"
                         value={ex.name}
                         onChange={(e) => handleExerciseChange(i, 'name', e.target.value)}
                         className="bg-transparent text-white font-semibold focus:outline-none focus:border-blue-500 border-b border-transparent w-full"
@@ -328,16 +447,50 @@ export default function Dashboard() {
                           className="w-16 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
                         />
                       </div>
+                      <div className="text-center">
+                        <span className="text-xs text-slate-500 block">Rest (s)</span>
+                        <input
+                          type="number"
+                          min="0"
+                          aria-label={`Exercise ${i + 1} rest in seconds`}
+                          value={ex.rest_seconds}
+                          onChange={(e) => handleExerciseChange(i, 'rest_seconds', parseInt(e.target.value) || 0)}
+                          className="w-14 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      {ex.name.trim() && (
+                        <button
+                          onClick={() => setSwapIndex(i)}
+                          className="min-h-11 px-2 text-sm text-blue-400 hover:text-blue-300"
+                        >
+                          Swap
+                        </button>
+                      )}
                       <button
-                        onClick={() => setSwapIndex(i)}
-                        className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+                        onClick={() => removeExercise(i)}
+                        aria-label={`Remove exercise ${i + 1}`}
+                        className="min-h-11 px-2 text-sm text-slate-400 hover:text-red-300"
                       >
-                        Swap
+                        Remove
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
+
+              <button
+                onClick={() =>
+                  editRoutine({
+                    ...selectedRoutine,
+                    exercises: [...selectedRoutine.exercises, blankExercise],
+                  })
+                }
+                className="mt-3 w-full min-h-11 rounded-xl border border-dashed border-slate-700 text-sm text-slate-300 hover:border-slate-500"
+              >
+                + Add exercise
+              </button>
             </div>
           ) : (
             <div className="text-center py-12 text-slate-500">Select a routine from the list</div>
@@ -347,6 +500,10 @@ export default function Dashboard() {
 
       {showIntake && (
         <IntakeModal onGenerate={handleGenerate} onClose={() => setShowIntake(false)} />
+      )}
+
+      {showAccount && (
+        <AccountModal onSignedIn={reloadAfterAccountChange} onClose={() => setShowAccount(false)} />
       )}
 
       {swapIndex !== null && swapRoutine && (

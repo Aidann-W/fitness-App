@@ -55,10 +55,17 @@ export function generateRoutine(answers: RoutineAnswers) {
   });
 }
 
-export function updateRoutineExercises(id: string, exercises: Exercise[]) {
+export function updateRoutine({ id, title, description, exercises }: WorkoutRoutine) {
   return request<{ ok: true }>('/api/routines', {
     method: 'PATCH',
-    body: JSON.stringify({ id, exercises }),
+    body: JSON.stringify({ id, title, description, exercises }),
+  });
+}
+
+export function deleteRoutine(id: string) {
+  return request<{ ok: true }>('/api/routines', {
+    method: 'DELETE',
+    body: JSON.stringify({ id }),
   });
 }
 
