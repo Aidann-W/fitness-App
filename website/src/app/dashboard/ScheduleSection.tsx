@@ -21,6 +21,7 @@ import {
 import { readJson, writeJson } from '@/lib/storage';
 
 const PREFS_KEY = 'cumulusfit.schedulePrefs';
+const DRAFTS_KEY = 'cumulusfit.scheduleDrafts';
 const DAYS_SHOWN = 7;
 const SESSION_TITLE = 'Gym session';
 
@@ -77,7 +78,11 @@ export default function ScheduleSection() {
   const [busy, setBusy] = useState<StoredBusy | null>(null);
   const [prefs, setPrefs] = useState<SchedulePrefs>(DEFAULT_PREFS);
   const [sessions, setSessions] = useState<GymSession[]>([]);
-  const [drafts, setDrafts] = useState<PlannedSlot[]>([]);
+  const [drafts, setDraftState] = useState<PlannedSlot[]>([]);
+  const setDrafts = (next: PlannedSlot[]) => {
+    setDraftState(next);
+    writeJson(DRAFTS_KEY, next);
+  };
   const [planning, setPlanning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -88,6 +93,7 @@ export default function ScheduleSection() {
     while (days.length < DAYS_SHOWN) days.push(nextDay(days[days.length - 1]));
     setWeek(days);
 
+    setDraftState((readJson<PlannedSlot[]>(DRAFTS_KEY) ?? []).filter((slot) => slot.date >= dateKey(today)));
     setBusy(readJson<StoredBusy>(BUSY_KEY));
     setPrefs({ ...DEFAULT_PREFS, ...readJson<SchedulePrefs>(PREFS_KEY) });
     fetchSchedule()

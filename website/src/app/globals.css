@@ -103,3 +103,79 @@ input:not([type="checkbox"]):not([type="radio"]), select { min-width: 0; }
 @media (max-width: 380px) {
   .workout-session td input { width: 64px; }
 }
+/* Page navigation: one route per destination, with a persistent shared shell. */
+.cloud-app { display: flex; flex-direction: column; }
+.cloud-nav { border-radius: 22px; padding: 5px; }
+.cloud-nav a { border-radius: 16px; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; transition: background-color 150ms ease-out, color 150ms ease-out; }
+.cloud-header > div { row-gap: 12px; }
+.account-actions:empty { display: none; }
+.account-email { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skip-link { position: fixed; z-index: 60; top: 12px; left: 12px; padding: 12px 18px; border-radius: 12px; background: #fff; color: #233b58; clip-path: inset(50%); }
+.skip-link:focus { clip-path: none; }
+.cloud-footer { width: calc(100% - 40px); }
+.button-primary, .button-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; border: 1px solid transparent; border-radius: 16px; padding: 11px 17px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.button-primary { background: #2e4b70; color: white; box-shadow: 0 3px 10px #2c466c15; }
+.button-secondary { background: #fff; color: #344f70; border-color: #aabbd0; }
+.page-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.resume-banner { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid #b8cce2; border-radius: 24px; background: #e8f0fa; font-size: 13px; }
+.resume-banner p { margin-top: 4px; color: #5c728b; }
+.resume-banner .button-primary { flex-shrink: 0; }
+.dashboard-overview { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
+.dashboard-workout { display: flex; align-items: center; }
+.dashboard-workout > div.relative { min-height: auto; width: 100%; }
+.dashboard-workout h2 { max-width: 480px; }
+.overview-stats { display: grid; gap: 12px; }
+.stat-card, .destination-card { border: 1px solid transparent; background: #ffffffd9; box-shadow: var(--surface-shadow); border-radius: 24px; padding: 20px 24px; }
+.stat-card { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 16px; }
+.stat-card > span { font-size: 13px; color: #526a84; }
+.stat-card strong { grid-column: 2; grid-row: 1 / 3; color: #2e4b70; font-size: 30px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.stat-card small { font-size: 11px; color: #748498; }
+.destination-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+.destination-card { position: relative; display: block; text-decoration: none; padding: 24px; transition: background-color 150ms ease-out; }
+.destination-card h3 { margin: 24px 0 8px; color: #2a4463; font-size: 19px; font-weight: 600; letter-spacing: -.5px; }
+.destination-card p { color: #687e96; font-size: 13px; line-height: 1.7; }
+.destination-arrow { position: absolute; top: 20px; right: 24px; color: #6685aa; font-size: 23px; }
+.empty-card { padding: 28px; border: 1px dashed #b4c6dc; border-radius: 24px; background: #ffffff99; font-size: 14px; color: #637992; }
+.routine-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 22px; font-size: 11px; color: #557393; }
+.routine-meta > span { font-weight: 600; }
+#activity > .grid { margin-bottom: 24px; }
+.exercise-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.exercise-editor-card { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 16px; align-content: start; border-radius: 28px; padding: 20px; }
+.exercise-editor-card > .min-w-0 { align-self: center; }
+.exercise-editor-card > .min-w-0 > p { margin-top: 6px; line-height: 1.6; }
+.exercise-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid #e8edf4; }
+.exercise-fields label { text-align: left; }
+.exercise-fields input { width: 100%; min-width: 0; text-align: left; padding-inline: 12px; }
+.exercise-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+.exercise-actions button { border-radius: 12px; background: #f1f5fa; padding-inline: 14px; }
+.exercise-grid > button { grid-column: 1 / -1; }
+/* Page switches are frequent: do not replay decorative entrances on navigation. */
+.cloud-app .page-heading, .cloud-app .session-hero, .cloud-app .generate-card { animation: none; }
+@media (hover:hover) {
+  .button-primary:hover { background: #3c5d87; }
+  .button-secondary:hover, .destination-card:hover { background: #edf3fc; }
+  .exercise-actions button:hover { background: #e5edf7; }
+}
+@media (max-width: 1100px) {
+  .cloud-nav { order: 3; width: 100%; justify-content: center; }
+  .cloud-nav a { flex: 1; }
+}
+@media (max-width: 767px) {
+  .cloud-nav { gap: 2px; padding: 5px; overflow-x: auto; overscroll-behavior: contain; justify-content: flex-start; border-radius: 20px; }
+  .cloud-nav a { flex: 0 0 auto; font-size: 12px; padding: 10px 13px; border-radius: 14px; }
+  .dashboard-overview, .destination-grid, .exercise-grid { grid-template-columns: 1fr; }
+  .stat-card { padding: 16px 20px; }
+  .dashboard-workout > div.relative { min-height: auto; }
+  .resume-banner { align-items: flex-start; flex-direction: column; }
+  .exercise-editor-card { padding: 16px; border-radius: 24px; }
+  .account-email { max-width: 130px; }
+}
+.dashboard-workout > div.relative > div { min-height: 0; }
+.exercise-editor-card { background: #fff; border: 1px solid transparent; }
+.exercise-picker-menu { max-height: min(440px, 60dvh); overflow-y: auto; overscroll-behavior: contain; border-radius: 25px; }
+@media (max-width: 767px) {
+  .exercise-editor-card .exercise-picker-menu { left: auto; right: 0; width: min(300px, calc(100vw - 72px)); min-width: 0; }
+  .exercise-picker-menu [role="option"] { align-items: flex-start; flex-direction: column; gap: 2px; padding-block: 8px; }
+}
+.cloud-nav { scrollbar-width: none; }
+.cloud-nav::-webkit-scrollbar { display: none; }
