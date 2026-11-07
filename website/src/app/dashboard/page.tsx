@@ -259,6 +259,11 @@ export default function Dashboard() {
     });
   };
 
+  const routineCards = loading ? [] : [...routines, ...starterPresets];
+  const focusHint = recentWorkouts.length === 0
+    ? "Suggested focus is full body, because there is no completed history yet."
+    : "Recent sessions are below. Generate again if today should train something else.";
+
   return (
     <div className="min-h-screen bg-[#e7eef3] font-sans text-slate-800">
       <header className="border-b border-[#d5e0e8] bg-white">
@@ -288,20 +293,6 @@ export default function Dashboard() {
                 </>
               )
             )}
-            <button
-              onClick={() => editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] })}
-              disabled={Boolean(session)}
-              className="min-h-11 rounded-full border border-[#d5e0e8] bg-white px-4 text-sm font-medium text-slate-800 hover:border-[#b7c9d6] disabled:opacity-50"
-            >
-              Build my own
-            </button>
-            <button
-              onClick={() => setShowIntake(true)}
-              disabled={Boolean(session)}
-              className="min-h-11 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              Generate
-            </button>
           </div>
         </div>
       </header>
@@ -312,191 +303,251 @@ export default function Dashboard() {
         </p>
       )}
 
-      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-8 py-8 md:grid-cols-3">
-        <div className="space-y-3">
-          <h2 className="px-1 text-sm font-medium text-[#3d6d8c]">Your routines</h2>
-          {loading ? (
-            <div className="animate-pulse rounded-3xl border border-[#d5e0e8] bg-white p-4 text-slate-500">Loading routines...</div>
-          ) : (
-            [...routines, ...starterPresets].map((item, idx) => {
-              const selected = (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title);
-              return (
-                <div
-                  key={item.id || idx}
-                  onClick={() => setSelectedRoutine(item)}
-                  className={`cursor-pointer rounded-3xl border bg-white p-4 transition ${
-                    selected
-                      ? 'border-[#3d6d8c] shadow-[0_12px_40px_rgba(30,58,82,0.06)]'
-                      : 'border-[#d5e0e8] hover:border-[#b7c9d6]'
-                  }`}
-                >
-                  <h3 className="font-semibold text-slate-900">{item.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-500">{item.description}</p>
-                  <span className="mt-3 inline-block rounded-full bg-[#e7eef3] px-2.5 py-1 text-xs font-semibold text-[#3d6d8c]">
-                    {item.exercises.length} exercises
-                  </span>
-                </div>
-              );
-            })
-          )}
-
-          {recentWorkouts.length > 0 && (
-            <>
-              <h2 className="px-1 pt-4 text-sm font-medium text-[#3d6d8c]">Recent workouts</h2>
-              {recentWorkouts.map((workout) => (
-                <div key={workout.sessionId} className="rounded-3xl border border-[#d5e0e8] bg-white p-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {new Date(workout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    {' · '}{workout.setCount} set(s)
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">{workout.exercises.join(', ')}</p>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        <div className="rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.06)] md:col-span-2">
-          {session ? (
-            <WorkoutSession
-              session={session}
-              lastSets={lastSets}
-              onChange={updateSession}
-              onFinish={finishWorkout}
-              onSwap={setSwapIndex}
-            />
-          ) : selectedRoutine ? (
-            <div>
-              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-48 flex-1">
-                  <input
-                    type="text"
-                    aria-label="Routine name"
-                    value={selectedRoutine.title}
-                    onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })}
-                    className="w-full border-b border-transparent bg-transparent text-2xl font-semibold text-slate-900 focus:border-[#3d6d8c] focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    aria-label="Routine description"
-                    placeholder="Add a description"
-                    value={selectedRoutine.description}
-                    onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })}
-                    className="mt-1 w-full border-b border-transparent bg-transparent text-sm text-slate-500 focus:border-[#3d6d8c] focus:outline-none"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  {isStored(selectedRoutine) && (
-                    <button
-                      onClick={() => handleDeleteRoutine(selectedRoutine)}
-                      className="min-h-11 rounded-full px-3 text-sm text-slate-500 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-                  )}
-                  <button
-                    onClick={() => startWorkout(selectedRoutine)}
-                    disabled={!canStart(selectedRoutine)}
-                    className="min-h-11 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+      <main className="mx-auto max-w-6xl space-y-8 px-8 py-8">
+        {session ? (
+          <WorkoutSession
+            session={session}
+            lastSets={lastSets}
+            onChange={updateSession}
+            onFinish={finishWorkout}
+            onSwap={setSwapIndex}
+          />
+        ) : (
+          <>
+            <section className="grid items-stretch gap-6 lg:grid-cols-[1.5fr_0.8fr]">
+              <article className="overflow-hidden rounded-[28px] bg-white shadow-[0_12px_40px_rgba(30,58,82,0.06)]">
+                <div className="grid min-h-72 md:grid-cols-[240px_1fr]">
+                  <div
+                    aria-hidden="true"
+                    className="relative min-h-40 bg-[linear-gradient(160deg,#1e293b_0%,#64748b_55%,#cbd5e1_100%)]"
                   >
-                    Start workout
+                    <div className="absolute inset-6 rounded-2xl border border-white/25" />
+                    <p className="absolute bottom-6 left-6 text-sm font-medium tracking-wide text-white/90">Today</p>
+                  </div>
+                  <div className="flex flex-col justify-between gap-6 p-8">
+                    <div>
+                      <p className="text-sm font-medium text-[#3d6d8c]">Today&apos;s session</p>
+                      {selectedRoutine ? (
+                        <>
+                          <input
+                            type="text"
+                            aria-label="Routine name"
+                            value={selectedRoutine.title}
+                            onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })}
+                            className="mt-2 w-full bg-transparent text-4xl font-semibold tracking-tight text-slate-900 focus:outline-none"
+                          />
+                          <input
+                            type="text"
+                            aria-label="Routine description"
+                            placeholder="Add a short description"
+                            value={selectedRoutine.description}
+                            onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })}
+                            className="mt-2 w-full bg-transparent text-base text-slate-500 focus:outline-none"
+                          />
+                        </>
+                      ) : (
+                        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
+                          {loading ? "Loading today's session" : "No session yet"}
+                        </h1>
+                      )}
+                      <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">{focusHint}</p>
+                    </div>
+                    {selectedRoutine && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={() => startWorkout(selectedRoutine)}
+                          disabled={!canStart(selectedRoutine)}
+                          className="min-h-12 rounded-full bg-slate-900 px-6 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+                        >
+                          Start workout
+                        </button>
+                        <span className="rounded-full bg-[#e7eef3] px-3 py-1 text-xs font-semibold text-[#3d6d8c]">
+                          {selectedRoutine.exercises.length} exercises
+                        </span>
+                        {isStored(selectedRoutine) && (
+                          <button
+                            onClick={() => handleDeleteRoutine(selectedRoutine)}
+                            className="min-h-11 rounded-full px-3 text-sm text-slate-500 hover:text-red-700"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {selectedRoutine && !canStart(selectedRoutine) && (
+                      <p className="text-sm text-amber-800">Give every exercise a different name to start this workout.</p>
+                    )}
+                  </div>
+                </div>
+              </article>
+
+              <aside className="flex flex-col justify-between rounded-[28px] border border-[#d5e0e8] bg-white p-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Build today</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Generate a session from your goal and equipment, or start from a blank list.
+                  </p>
+                </div>
+                <div className="mt-6 flex flex-col gap-3">
+                  <button
+                    onClick={() => setShowIntake(true)}
+                    className="min-h-12 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    Generate
+                  </button>
+                  <button
+                    onClick={() => editRoutine({ title: "My Workout", description: "", exercises: [blankExercise] })}
+                    className="min-h-12 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6]"
+                  >
+                    Build my own
                   </button>
                 </div>
+              </aside>
+            </section>
+
+            <section>
+              <div className="mb-3 flex items-end justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">Exercises</h2>
+                <p className="text-sm text-slate-500">Sets, reps, and rest for the session above</p>
               </div>
-
-              {!canStart(selectedRoutine) && (
-                <p className="mb-3 text-sm text-amber-800">
-                  Give every exercise a different name to start this workout.
-                </p>
-              )}
-
-              <div className="space-y-3">
-                {selectedRoutine.exercises.map((ex, i) => (
-                  <div key={i} className="flex flex-col gap-3 rounded-2xl border border-[#d5e0e8] bg-[#f4f8fb] p-4 sm:flex-row sm:items-center">
-                    <div className="min-w-0 flex-1">
-                      <input
-                        type="text"
-                        aria-label={`Exercise ${i + 1} name`}
-                        placeholder="Exercise name"
-                        value={ex.name}
-                        onChange={(e) => handleExerciseChange(i, 'name', e.target.value)}
-                        className="w-full border-b border-transparent bg-transparent font-semibold text-slate-900 focus:border-[#3d6d8c] focus:outline-none"
-                      />
-                      {ex.notes && <p className="mt-0.5 text-xs text-slate-500">{ex.notes}</p>}
-                      {lastSets[ex.name] && (
-                        <p className="mt-1 text-xs text-[#3d6d8c]">
-                          Last time: {lastSets[ex.name].map(formatSet).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="text-center">
-                        <span className="block text-xs text-slate-500">Sets</span>
-                        <input
-                          type="number"
-                          value={ex.sets}
-                          onChange={(e) => handleExerciseChange(i, 'sets', parseInt(e.target.value) || 1)}
-                          className="h-11 w-14 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
-                        />
-                      </div>
-                      <div className="text-center">
-                        <span className="block text-xs text-slate-500">Reps</span>
+              {loading ? (
+                <div className="rounded-[28px] border border-[#d5e0e8] bg-white p-6 text-slate-500">Loading routines...</div>
+              ) : selectedRoutine ? (
+                <div className="space-y-3">
+                  {selectedRoutine.exercises.map((ex, i) => (
+                    <div key={i} className="flex flex-col gap-4 rounded-[24px] border border-[#d5e0e8] bg-white p-4 sm:flex-row sm:items-center">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e7eef3] text-sm font-semibold text-[#3d6d8c]">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
                         <input
                           type="text"
-                          value={ex.reps}
-                          onChange={(e) => handleExerciseChange(i, 'reps', e.target.value)}
-                          className="h-11 w-16 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
+                          aria-label={`Exercise ${i + 1} name`}
+                          placeholder="Exercise name"
+                          value={ex.name}
+                          onChange={(e) => handleExerciseChange(i, "name", e.target.value)}
+                          className="w-full bg-transparent text-base font-semibold text-slate-900 focus:outline-none"
                         />
+                        {ex.notes && <p className="text-xs text-slate-500">{ex.notes}</p>}
+                        {lastSets[ex.name] && (
+                          <p className="text-xs text-[#3d6d8c]">Last time: {lastSets[ex.name].map(formatSet).join(", ")}</p>
+                        )}
                       </div>
-                      <div className="text-center">
-                        <span className="block text-xs text-slate-500">Rest (s)</span>
-                        <input
-                          type="number"
-                          min="0"
-                          aria-label={`Exercise ${i + 1} rest in seconds`}
-                          value={ex.rest_seconds}
-                          onChange={(e) => handleExerciseChange(i, 'rest_seconds', parseInt(e.target.value) || 0)}
-                          className="h-11 w-16 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
-                        />
+                      <div className="flex items-center gap-3 text-sm">
+                        <label className="text-center text-xs text-slate-500">
+                          Sets
+                          <input
+                            type="number"
+                            value={ex.sets}
+                            onChange={(e) => handleExerciseChange(i, "sets", parseInt(e.target.value) || 1)}
+                            className="mt-1 block h-11 w-14 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"
+                          />
+                        </label>
+                        <label className="text-center text-xs text-slate-500">
+                          Reps
+                          <input
+                            type="text"
+                            value={ex.reps}
+                            onChange={(e) => handleExerciseChange(i, "reps", e.target.value)}
+                            className="mt-1 block h-11 w-16 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"
+                          />
+                        </label>
+                        <label className="text-center text-xs text-slate-500">
+                          Rest
+                          <input
+                            type="number"
+                            min="0"
+                            aria-label={`Exercise ${i + 1} rest in seconds`}
+                            value={ex.rest_seconds}
+                            onChange={(e) => handleExerciseChange(i, "rest_seconds", parseInt(e.target.value) || 0)}
+                            className="mt-1 block h-11 w-16 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"
+                          />
+                        </label>
                       </div>
-                    </div>
-                    <div className="flex items-center">
-                      {ex.name.trim() && (
+                      <div className="flex items-center">
+                        {ex.name.trim() && (
+                          <button
+                            onClick={() => setSwapIndex(i)}
+                            className="min-h-11 px-2 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
+                          >
+                            Swap
+                          </button>
+                        )}
                         <button
-                          onClick={() => setSwapIndex(i)}
-                          className="min-h-11 px-2 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
+                          onClick={() => removeExercise(i)}
+                          aria-label={`Remove exercise ${i + 1}`}
+                          className="min-h-11 px-2 text-sm text-slate-500 hover:text-red-700"
                         >
-                          Swap
+                          Remove
                         </button>
-                      )}
-                      <button
-                        onClick={() => removeExercise(i)}
-                        aria-label={`Remove exercise ${i + 1}`}
-                        className="min-h-11 px-2 text-sm text-slate-500 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  <button
+                    onClick={() =>
+                      editRoutine({
+                        ...selectedRoutine,
+                        exercises: [...selectedRoutine.exercises, blankExercise],
+                      })
+                    }
+                    className="min-h-12 w-full rounded-[24px] border border-dashed border-[#b7c9d6] bg-white/60 text-sm font-medium text-slate-600 hover:border-[#3d6d8c]"
+                  >
+                    + Add exercise
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-[28px] border border-dashed border-[#b7c9d6] bg-white/70 p-8 text-slate-500">
+                  Generate a session or pick one below.
+                </div>
+              )}
+            </section>
 
-              <button
-                onClick={() =>
-                  editRoutine({
-                    ...selectedRoutine,
-                    exercises: [...selectedRoutine.exercises, blankExercise],
-                  })
-                }
-                className="mt-3 min-h-11 w-full rounded-2xl border border-dashed border-[#b7c9d6] text-sm font-medium text-slate-600 hover:border-[#3d6d8c] hover:text-slate-900"
-              >
-                + Add exercise
-              </button>
-            </div>
-          ) : (
-            <div className="py-12 text-center text-slate-500">Select a routine from the list</div>
-          )}
-        </div>
+            <section className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">Your routines</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {routineCards.map((item, idx) => {
+                    const selected = (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title);
+                    return (
+                      <button
+                        key={item.id || idx}
+                        type="button"
+                        onClick={() => setSelectedRoutine(item)}
+                        className={`rounded-[24px] border bg-white p-4 text-left ${
+                          selected ? "border-[#3d6d8c]" : "border-[#d5e0e8] hover:border-[#b7c9d6]"
+                        }`}
+                      >
+                        <span className="block font-semibold text-slate-900">{item.title}</span>
+                        <span className="mt-1 block line-clamp-2 text-sm text-slate-500">{item.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">Recent activity</h2>
+                {recentWorkouts.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#b7c9d6] bg-white/70 p-6 text-sm leading-6 text-slate-600">
+                    No completed workouts yet. Finished sets will show here with the date and the exercises you actually logged.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentWorkouts.map((workout) => (
+                      <div key={workout.sessionId} className="rounded-[24px] border border-[#d5e0e8] bg-white p-4">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {new Date(workout.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          {" · "}
+                          {workout.setCount} set(s)
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">{workout.exercises.join(", ")}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       {showIntake && (

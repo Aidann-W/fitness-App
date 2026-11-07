@@ -149,16 +149,25 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
       {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
 
       <div className="space-y-4">
-        {session.routine.exercises.map((exercise, exerciseIndex) => {
+        {session.routine.exercises
+          .map((exercise, exerciseIndex) => ({ exercise, exerciseIndex }))
+          .sort((a, b) => {
+            const unfinished = (exercise: Exercise) =>
+              Array.from({ length: exercise.sets }).some((_, index) => !entryFor(exercise, index).done);
+            return Number(!unfinished(a.exercise)) - Number(!unfinished(b.exercise));
+          })
+          .map(({ exercise, exerciseIndex }, visualIndex) => {
           const started = Array.from({ length: exercise.sets }).some(
             (_, index) => entryFor(exercise, index).done
           );
+          const current = visualIndex === 0;
 
           return (
-            <section key={exercise.name} className="rounded-2xl border border-[#d5e0e8] bg-[#f4f8fb] p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
+            <section key={exercise.name} className={`rounded-[28px] border border-[#d5e0e8] bg-white p-5 ${current ? "shadow-[0_12px_40px_rgba(30,58,82,0.06)]" : ""}`}>
+              <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-slate-900">{exercise.name}</h3>
+                  {current && <p className="text-sm font-medium text-[#3d6d8c]">Now</p>}
+                  <h3 className={`${current ? "text-2xl" : "text-lg"} font-semibold text-slate-900`}>{exercise.name}</h3>
                   <p className="mt-0.5 text-xs text-slate-500">
                     {exercise.sets} × {exercise.reps}, {exercise.rest_seconds}s rest
                   </p>
@@ -179,14 +188,24 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                 )}
               </div>
 
-              <div className="space-y-2">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="pb-2 font-medium">Set</th>
+                    <th className="pb-2 font-medium">Weight</th>
+                    <th className="pb-2 font-medium">Reps</th>
+                    <th className="pb-2 text-right font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
                 {Array.from({ length: exercise.sets }, (_, index) => {
                   const entry = entryFor(exercise, index);
                   const label = `${exercise.name} set ${index + 1}`;
 
                   return (
-                    <div key={index} className="flex items-center gap-2 text-sm text-slate-700">
-                      <span className="w-6 text-slate-500">{index + 1}</span>
+                    <tr key={index} className="border-t border-[#e6eef3] text-slate-700">
+                      <td className="py-2 text-slate-500">{index + 1}</td>
+                      <td className="py-2">
                       <input
                         type="number"
                         inputMode="decimal"
@@ -197,8 +216,10 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.weight}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { weight: e.target.value })}
-                        className="h-11 w-20 rounded-xl border border-slate-300 bg-white text-center text-slate-900 disabled:opacity-60"
+                        className="h-11 w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
                       />
+                      </td>
+                      <td className="py-2">
                       <input
                         type="number"
                         inputMode="numeric"
@@ -208,22 +229,26 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.reps}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { reps: e.target.value })}
-                        className="h-11 w-20 rounded-xl border border-slate-300 bg-white text-center text-slate-900 disabled:opacity-60"
+                        className="h-11 w-24 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900 disabled:opacity-60"
                       />
+                      </td>
+                      <td className="py-2 text-right">
                       <button
                         onClick={() => (entry.done ? undoSet(exercise, index) : completeSet(exercise, index))}
                         disabled={!entry.done && entry.reps === ''}
                         aria-label={entry.done ? `Undo ${label}` : `Complete ${label}`}
-                        className={`ml-auto min-h-11 rounded-full px-4 font-semibold disabled:opacity-50 ${
+                        className={`min-h-11 rounded-full px-4 font-semibold disabled:opacity-50 ${
                           entry.done ? 'bg-[#e7eef3] text-[#1e4a66]' : 'bg-slate-900 text-white'
                         }`}
                       >
-                        {entry.done ? '✓ Done' : 'Done'}
+                        {entry.done ? 'Done' : 'Mark done'}
                       </button>
-                    </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+                </tbody>
+              </table>
             </section>
           );
         })}
