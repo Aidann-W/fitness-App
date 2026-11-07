@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { createAccount, logIn } from '@/lib/account';
 
-const fieldClass = 'w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white';
+const fieldClass = 'w-full h-11 rounded-xl border border-slate-300 bg-white px-3 text-slate-900';
 
 interface Props {
   onSignedIn: () => void;
@@ -41,31 +41,31 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/30 p-4">
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-title"
         onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 bg-slate-900 border border-slate-700 rounded-2xl p-6"
+        className="w-full max-w-md space-y-4 rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.12)]"
       >
-        <h2 id="account-title" className="text-xl font-bold text-white">
+        <h2 id="account-title" className="text-xl font-semibold text-slate-900">
           {creating ? 'Save your progress' : 'Log in'}
         </h2>
 
         {confirmEmail ? (
-          <p role="status" className="text-sm text-slate-300">
+          <p role="status" className="text-sm text-slate-600">
             Check {email} for a confirmation link to finish creating your account.
           </p>
         ) : (
           <>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               {creating
                 ? 'Create an account to keep your workouts and use them on any device.'
                 : "Workouts done on this device without an account won't move to your account."}
             </p>
 
-            <label className="block text-sm text-slate-300 space-y-1">
+            <label className="block space-y-1 text-sm text-slate-700">
               <span>Email</span>
               <input
                 type="email"
@@ -77,7 +77,7 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
               />
             </label>
 
-            <label className="block text-sm text-slate-300 space-y-1">
+            <label className="block space-y-1 text-sm text-slate-700">
               <span>Password</span>
               <input
                 type="password"
@@ -90,7 +90,7 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
               />
             </label>
 
-            {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+            {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
 
             <button
               type="button"
@@ -98,7 +98,7 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
                 setMode(creating ? 'login' : 'create');
                 setError(null);
               }}
-              className="min-h-11 text-sm text-blue-400 hover:text-blue-300"
+              className="min-h-11 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
             >
               {creating ? 'Already have an account? Log in' : 'New here? Create an account'}
             </button>
@@ -110,7 +110,7 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="px-4 py-2.5 rounded-lg text-slate-300 hover:text-white disabled:opacity-50"
+            className="rounded-full px-4 py-2.5 text-slate-600 hover:text-slate-900 disabled:opacity-50"
           >
             {confirmEmail ? 'Close' : 'Cancel'}
           </button>
@@ -118,7 +118,7 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
             <button
               type="submit"
               disabled={pending}
-              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
+              className="rounded-full bg-slate-900 px-4 py-2.5 font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
             >
               {pending ? 'Please wait…' : creating ? 'Create account' : 'Log in'}
             </button>
