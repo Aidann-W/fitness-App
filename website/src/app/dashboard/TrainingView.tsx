@@ -7,8 +7,8 @@ import { PageHeading } from './PageHeading';
 export default function TrainingView() {
     const { session, selectedRoutine, loading, lastSets, editRoutine, buildRoutine, handleDeleteRoutine, setShowIntake, startWorkout, updateSession, finishWorkout, setSwapIndex, handleExerciseChange, removeExercise } = useWorkouts();
     return <><PageHeading eyebrow="YOUR WORKOUT" title="Training" description={session ? 'Log your sets and keep track of your rest.' : 'Prepare your workout, then log each set as you train.'}/>
-  {session ? <WorkoutSession session={session} lastSets={lastSets} onChange={updateSession} onFinish={finishWorkout} onSwap={setSwapIndex}/> : <><section className="grid items-stretch gap-5 lg:grid-cols-[1.65fr_0.85fr]">
-        <article className="session-hero"><div className="hero-clouds" aria-hidden="true"/><div className="relative z-[1]"><div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
+  {session ? <WorkoutSession session={session} lastSets={lastSets} onChange={updateSession} onFinish={finishWorkout} onSwap={setSwapIndex}/> : <><section className="training-overview">
+        <article className="session-hero training-routine"><div className="hero-clouds" aria-hidden="true"/><div className="relative z-[1]"><div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
                     <div>
                       <p className="hero-label"><span className="live-dot"/> TODAY’S WORKOUT</p>
                       {selectedRoutine ? (<>
@@ -37,14 +37,14 @@ export default function TrainingView() {
 
               <aside className="generate-card flex flex-col justify-between rounded-[28px] p-6 sm:p-7">
                 <div>
-                  <span className="ai-symbol" aria-hidden="true">✧</span><p className="eyebrow mt-5">POWERED BY GEMINI</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Create a workout</h2>
+                  <span className="ai-symbol" aria-hidden="true">✧</span><p className="generator-credit">Powered by Gemini</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Create a workout</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Choose your goal, equipment, and available time. AI will suggest exercises, sets, and reps.
+                    Tell us what you want to work on and how much time you have. We’ll put a session together.
                   </p>
                 </div>
                 <div className="mt-6 flex flex-col gap-3">
                   <button onClick={() => setShowIntake(true)} className="min-h-12 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800">
-                    Create with AI <span aria-hidden="true" className="ml-2">✧</span>
+                    Create workout
                   </button>
                   <button onClick={buildRoutine} className="min-h-12 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6]">
                     Or build my own
@@ -56,9 +56,9 @@ export default function TrainingView() {
             <section className="exercise-section">
               <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
                 <h2 className="text-lg font-semibold text-slate-900">Exercise plan <span className="section-count">{selectedRoutine?.exercises.length ?? 0}</span></h2>
-                <p className="text-sm text-slate-500">Choose movements and adjust your working sets.</p>
+
               </div>
-              {loading ? (<div className="rounded-[28px] border border-[#d5e0e8] bg-white p-6 text-slate-500">Loading routines...</div>) : selectedRoutine ? (<div className="exercise-grid">
+              {loading ? (<div className="rounded-[28px] border border-[#d5e0e8] bg-white p-6 text-slate-500">Loading routines...</div>) : selectedRoutine ? (<div className="exercise-grid training-list">
                   {selectedRoutine.exercises.map((ex, i) => (<div key={i} className="exercise-card exercise-editor-card">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e7eef3] text-sm font-semibold text-[#3d6d8c]">
                         {String(i + 1).padStart(2, "0")}
@@ -84,10 +84,10 @@ export default function TrainingView() {
                         </label>
                       </div>
                       <div className="exercise-actions">
-                        {ex.name.trim() && (<button onClick={() => setSwapIndex(i)} className="min-h-11 px-2 text-sm font-medium text-[#3d6d8c] hover:text-slate-900">
+                        {ex.name.trim() && (<button onClick={() => setSwapIndex(i)} className="swap-button min-h-11 px-2 text-sm font-medium">
                             Swap
                           </button>)}
-                        <button onClick={() => removeExercise(i)} aria-label={`Remove exercise ${i + 1}`} className="min-h-11 px-2 text-sm text-slate-500 hover:text-red-700">
+                        <button onClick={() => removeExercise(i)} aria-label={`Remove exercise ${i + 1}`} className="remove-button min-h-11 px-2 text-sm">
                           Remove
                         </button>
                       </div>

@@ -189,12 +189,13 @@ export default function ProgressPanel({ logs }: { logs: LoggedSet[] }) {
   const exercise = picked && exercises.includes(picked) ? picked : exercises[0];
   const points = useMemo(() => (exercise ? progressFor(logs, exercise) : []), [logs, exercise]);
 
-  if (logs.length === 0) return null;
+
 
   return (
-    <div className="mb-4 space-y-3">
+    <div className="progress-layout">
       <AltitudeCard logs={logs} />
 
+      {!exercise && <div className="panel progress-empty"><h3>Strength progress</h3><p>Log a weighted exercise to start your chart.</p><div className="chart-placeholder" aria-hidden="true"><span/><span/><span/><span/></div><small>No lifting data yet</small></div>}
       {exercise && (
         <div className="rounded-[24px] border border-[#d5e0e8] bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-2">

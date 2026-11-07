@@ -296,7 +296,7 @@ export default function WorkoutProvider({ children }: {
           {session && pathname !== '/training' && pathname !== '/dashboard' && <div className="resume-banner"><div><strong>Workout in progress</strong><p>{session.routine.title}</p></div><Link href="/training" className="button-primary">Resume workout <span aria-hidden="true">↗</span></Link></div>}
           {children}
         </main>
-        <footer className="cloud-footer"><span>CumulusFit</span><p>Your workouts, organized.</p><small>Built at HackRPI 2026</small></footer>
+        <footer className="cloud-footer"><span>CumulusFit</span><small>Built at HackRPI 2026</small></footer>
         {showIntake && <IntakeModal onGenerate={handleGenerate} onClose={() => setShowIntake(false)}/>}
         {showAccount && <AccountModal onSignedIn={reloadAfterAccountChange} onClose={() => setShowAccount(false)}/>}
         {swapIndex !== null && swapRoutine && <SwapModal exercise={swapRoutine.exercises[swapIndex]} onSwap={handleSwap} onClose={() => setSwapIndex(null)}/>}

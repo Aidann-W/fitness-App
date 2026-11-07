@@ -75,6 +75,7 @@ function clipToDay(day: Date, intervals: BusyInterval[]): ClockRange[] {
 export default function ScheduleSection() {
   // Set after mount: the page is prerendered, so "today" must come from the browser.
   const [week, setWeek] = useState<Date[]>([]);
+  const [selectedDay, setSelectedDay] = useState(0);
   const [busy, setBusy] = useState<StoredBusy | null>(null);
   const [prefs, setPrefs] = useState<SchedulePrefs>(DEFAULT_PREFS);
   const [sessions, setSessions] = useState<GymSession[]>([]);
@@ -178,6 +179,10 @@ export default function ScheduleSection() {
       const openDays = week.filter((day) => sessionsOn(day).length === 0).map(planDay);
       const { sessions: planned } = await planSchedule(openDays, prefs, needed);
       setDrafts(planned);
+      if (planned[0]) {
+        const firstDay = week.findIndex((day) => dateKey(day) === planned[0].date);
+        if (firstDay >= 0) setSelectedDay(firstDay);
+      }
       if (planned.length < needed) {
         setMessage(`Only ${planned.length} of ${needed} session(s) fit around your week. Try longer gym hours or shorter sessions.`);
       } else if (planned.some((slot) => slot.from === 'planner')) {
@@ -274,11 +279,147 @@ export default function ScheduleSection() {
     downloadFile('cumulusfit-gym-schedule.ics', buildIcs(weekSessions));
 
   return (
-    <section id="schedule" className="scroll-mt-6">
-      <p className="eyebrow mb-2">PLAN YOUR WEEK</p>
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">Gym schedule</h2>
+    <section id="schedule" className="schedule-workspace">
+      <div className="schedule-agenda panel">
+        <div className="section-title"><div><p className="eyebrow">UPCOMING SEVEN DAYS</p><h2>Your gym calendar</h2></div><span className="calendar-count">{weekSessions.length} sessions</span></div>
+        <div className="calendar-week" role="group" aria-label="Choose a day">{week.map((day,i)=><button type="button" key={dateKey(day)} aria-pressed={selectedDay===i} onClick={()=>setSelectedDay(i)}><span>{day.toLocaleDateString(undefined,{weekday:'short'})}</span><strong>{day.getDate()}</strong><small>{sessionsOn(day).length || drafts.some((slot) => slot.date === dateKey(day)) ? '●' : '·'}</small></button>)}</div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+
+      {message && (
+        <p role="status" className="mt-4 rounded-2xl border border-[#d5e0e8] bg-white/80 p-3 text-sm text-slate-700">
+          {message}
+        </p>
+      )}
+
+      {drafts.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[#3d6d8c] bg-[#eef4f9] p-3">
+          <p className="text-sm text-slate-700">{drafts.length} suggested session(s) are shown below.</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDrafts([])}
+              className="min-h-11 rounded-full px-4 text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              onClick={keepDrafts}
+              className="min-h-11 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Add to my schedule
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="day-agenda">
+        {week.filter((_, i) => i === selectedDay).map((day) => {
+          const key = dateKey(day);
+          const busyToday = clipToDay(day, busy?.blocks ?? []);
+          const daySessions = sessionsOn(day);
+          const dayDrafts = drafts.filter((slot) => slot.date === key);
+
+          return (
+            <div key={key} className="agenda-day">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+              </h3>
+
+              {busyToday.length === 0 && daySessions.length === 0 && dayDrafts.length === 0 && <div className="agenda-empty"><span aria-hidden="true">☁</span><h4>A little room in your day.</h4><p>Add a gym session or use the planner to find a time.</p></div>}
+              <ul className="mt-2 space-y-2" aria-label={`${key} schedule`}>
+                {busyToday.map((block, i) => (
+                  <li key={`busy-${i}`} className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-500">
+                    Busy {timeLabel(localDate(key, block.start))}–{timeLabel(localDate(key, block.end))}
+                  </li>
+                ))}
+
+                {daySessions.map((session) => (
+                  <li key={session.id} className="rounded-xl border border-[#3d6d8c] bg-[#eef4f9] p-3">
+                    <p className="text-xs font-semibold text-[#2c496c]">
+                      {session.title}{session.source === 'ai' ? ' · planned with AI' : ''}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+                      <input
+                        type="time"
+                        aria-label={`${key} session start`}
+                        value={clockOf(new Date(session.starts_at))}
+                        onChange={(e) => changeTime(session, 'start', e.target.value)}
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-1 text-sm text-slate-900"
+                      />
+                      –
+                      <input
+                        type="time"
+                        aria-label={`${key} session end`}
+                        value={clockOf(new Date(session.ends_at))}
+                        onChange={(e) => changeTime(session, 'end', e.target.value)}
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-1 text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-between">
+                      <a
+                        href={googleCalendarLink(session)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center text-xs font-medium text-[#3d6d8c] underline"
+                      >
+                        Add to Google Calendar
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeSession(session)}
+                        aria-label={`Remove ${key} session`}
+                        className="min-h-11 px-2 text-xs text-slate-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+
+                {dayDrafts.map((slot) => (
+                  <li key={`draft-${slot.date}`} className="rounded-xl border border-dashed border-[#3d6d8c] p-3">
+                    <p className="text-xs font-semibold text-[#2c496c]">
+                      Suggested {timeLabel(localDate(slot.date, slot.start))}–{timeLabel(localDate(slot.date, slot.end))}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {slot.reason}{slot.from === 'planner' ? ' (built-in planner)' : ''}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                onClick={() => addSession(day)}
+                className="mt-2 min-h-11 w-full rounded-xl border border-dashed border-[#b7c9d6] text-xs font-medium text-slate-600 hover:border-[#3d6d8c]"
+              >
+                + Add session
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#d5e0e8] bg-white p-4">
+        <p className="text-sm text-slate-600">
+          Export this week&apos;s {weekSessions.length} session(s) to Google Calendar, Apple Calendar, or Outlook.
+        </p>
+        <button
+          type="button"
+          onClick={exportWeek}
+          disabled={weekSessions.length === 0}
+          className="min-h-11 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6] disabled:opacity-50"
+        >
+          Download .ics
+        </button>
+      </div>
+
+      <p className="mt-2 text-xs text-slate-400">
+        Sessions leave {BUFFER_MINUTES} minutes around busy times for getting to and from the gym.
+      </p>
+      </div>
+      <aside className="schedule-sidebar">      <div className="schedule-settings">
         <div className="rounded-[24px] border border-[#d5e0e8] bg-white p-5">
           <h3 className="font-semibold text-slate-900">1. Bring in your calendar</h3>
           <p className="mt-1 text-sm text-slate-500">
@@ -385,138 +526,7 @@ export default function ScheduleSection() {
         </div>
       </div>
 
-      {message && (
-        <p role="status" className="mt-4 rounded-2xl border border-[#d5e0e8] bg-white/80 p-3 text-sm text-slate-700">
-          {message}
-        </p>
-      )}
-
-      {drafts.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[#3d6d8c] bg-[#eef4f9] p-3">
-          <p className="text-sm text-slate-700">{drafts.length} suggested session(s) are shown below.</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setDrafts([])}
-              className="min-h-11 rounded-full px-4 text-sm font-medium text-slate-600 hover:text-slate-900"
-            >
-              Discard
-            </button>
-            <button
-              type="button"
-              onClick={keepDrafts}
-              className="min-h-11 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Add to my schedule
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {week.map((day) => {
-          const key = dateKey(day);
-          const busyToday = clipToDay(day, busy?.blocks ?? []);
-          const daySessions = sessionsOn(day);
-          const dayDrafts = drafts.filter((slot) => slot.date === key);
-
-          return (
-            <div key={key} className="rounded-[24px] border border-[#d5e0e8] bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-900">
-                {day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-              </h3>
-
-              <ul className="mt-2 space-y-2" aria-label={`${key} schedule`}>
-                {busyToday.map((block, i) => (
-                  <li key={`busy-${i}`} className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-500">
-                    Busy {timeLabel(localDate(key, block.start))}–{timeLabel(localDate(key, block.end))}
-                  </li>
-                ))}
-
-                {daySessions.map((session) => (
-                  <li key={session.id} className="rounded-xl border border-[#3d6d8c] bg-[#eef4f9] p-3">
-                    <p className="text-xs font-semibold text-[#2c496c]">
-                      {session.title}{session.source === 'ai' ? ' · planned with AI' : ''}
-                    </p>
-                    <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-                      <input
-                        type="time"
-                        aria-label={`${key} session start`}
-                        value={clockOf(new Date(session.starts_at))}
-                        onChange={(e) => changeTime(session, 'start', e.target.value)}
-                        className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-1 text-sm text-slate-900"
-                      />
-                      –
-                      <input
-                        type="time"
-                        aria-label={`${key} session end`}
-                        value={clockOf(new Date(session.ends_at))}
-                        onChange={(e) => changeTime(session, 'end', e.target.value)}
-                        className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-1 text-sm text-slate-900"
-                      />
-                    </div>
-                    <div className="mt-1 flex justify-between">
-                      <a
-                        href={googleCalendarLink(session)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-11 items-center text-xs font-medium text-[#3d6d8c] underline"
-                      >
-                        Add to Google Calendar
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => removeSession(session)}
-                        aria-label={`Remove ${key} session`}
-                        className="min-h-11 px-2 text-xs text-slate-500 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </li>
-                ))}
-
-                {dayDrafts.map((slot) => (
-                  <li key={`draft-${slot.date}`} className="rounded-xl border border-dashed border-[#3d6d8c] p-3">
-                    <p className="text-xs font-semibold text-[#2c496c]">
-                      Suggested {timeLabel(localDate(slot.date, slot.start))}–{timeLabel(localDate(slot.date, slot.end))}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {slot.reason}{slot.from === 'planner' ? ' (built-in planner)' : ''}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                type="button"
-                onClick={() => addSession(day)}
-                className="mt-2 min-h-11 w-full rounded-xl border border-dashed border-[#b7c9d6] text-xs font-medium text-slate-600 hover:border-[#3d6d8c]"
-              >
-                + Add session
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#d5e0e8] bg-white p-4">
-        <p className="text-sm text-slate-600">
-          Export this week&apos;s {weekSessions.length} session(s) to Google Calendar, Apple Calendar, or Outlook.
-        </p>
-        <button
-          type="button"
-          onClick={exportWeek}
-          disabled={weekSessions.length === 0}
-          className="min-h-11 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6] disabled:opacity-50"
-        >
-          Download .ics
-        </button>
-      </div>
-
-      <p className="mt-2 text-xs text-slate-400">
-        Sessions leave {BUFFER_MINUTES} minutes around busy times for getting to and from the gym.
-      </p>
+</aside>
     </section>
   );
 }

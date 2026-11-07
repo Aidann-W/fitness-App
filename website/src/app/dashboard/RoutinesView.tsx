@@ -6,7 +6,7 @@ export default function RoutinesView() {
     const { loading, routines, selectedRoutine, openRoutine, buildRoutine, setShowIntake } = useWorkouts();
     const routineCards = loading ? [] : [...routines, ...starterPresets];
     return <><PageHeading eyebrow="WORKOUT LIBRARY" title="My routines" description="Your saved workouts and ready-to-use starting points."/>
- <div className="page-actions"><button className="button-primary" onClick={() => setShowIntake(true)}>Create with AI ✧</button><button className="button-secondary" onClick={buildRoutine}>Build my own</button></div>
+ <div className="page-actions"><button className="button-primary" onClick={() => setShowIntake(true)}>Create workout</button><button className="button-secondary" onClick={buildRoutine}>Build my own</button></div>
  {loading ? <p className="empty-card" role="status">Loading routines…</p> : <div id="routines" className="scroll-mt-6">
                 <p className="eyebrow mb-2">READY WHEN YOU ARE</p><h2 className="mb-4 text-lg font-semibold text-slate-900">Your routines</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

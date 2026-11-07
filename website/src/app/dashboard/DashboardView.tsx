@@ -3,21 +3,24 @@ import Link from 'next/link';
 import { useWorkouts } from './WorkoutProvider';
 import { PageHeading } from './PageHeading';
 import { summarizeWorkouts } from '@/lib/history';
+import ProgressPanel from './ProgressPanel';
+import WorkoutWeek from './WorkoutWeek';
 export default function DashboardView() {
-    const { selectedRoutine, session, routines, logs, loading, setShowIntake } = useWorkouts();
-    const workouts = summarizeWorkouts(logs);
-    return <>
- <PageHeading eyebrow="YOUR OVERVIEW" title="Dashboard" description="Your next workout and a quick look at your progress."/>
- <section className="dashboard-overview">
-  <article className="session-hero dashboard-workout"><div className="hero-clouds" aria-hidden="true"/><div className="relative z-[1] p-6 sm:p-8"><p className="hero-label"><span className="live-dot"/>{session ? 'READY TO RESUME' : 'YOUR NEXT WORKOUT'}</p><h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{session?.routine.title ?? selectedRoutine?.title ?? (loading ? 'Loading your workout…' : 'Ready for your first workout?')}</h2><p className="mt-3 max-w-md text-sm leading-6 text-slate-600">{session ? 'Your completed sets are kept while you browse.' : selectedRoutine?.description ?? 'Create a workout or choose one from your routine library.'}</p><div className="mt-8 flex flex-wrap gap-3"><Link className="button-primary" href="/training">{session ? 'Resume workout' : 'Open training'} <span aria-hidden="true">↗</span></Link>{!session && <button className="button-secondary" onClick={() => setShowIntake(true)}>Create with AI ✧</button>}</div></div></article>
-  <div className="overview-stats" aria-label="Workout totals"><div className="stat-card"><span>Logged sessions</span><strong>{loading ? '—' : workouts.length}</strong><small>Sessions with completed sets</small></div><div className="stat-card"><span>Completed sets</span><strong>{loading ? '—' : logs.length}</strong><small>Across your workout history</small></div><div className="stat-card"><span>Saved routines</span><strong>{loading ? '—' : routines.length}</strong><small>Your personal workout library</small></div></div>
- </section>
- <section aria-labelledby="explore-title"><div className="mb-4"><p className="eyebrow">KEEP MOVING</p><h2 id="explore-title" className="mt-2 text-lg font-semibold text-slate-900">Everything in its place</h2></div><div className="destination-grid">
- {[
-            ['/routines', '01', 'My routines', 'Choose a saved workout or build a new one.'],
-            ['/activity', '02', 'Activity', 'See your lifting progress and past sessions.'],
-            ['/schedule', '03', 'Schedule', 'Fit gym sessions around your calendar.'],
-        ].map(([href, number, title, description]) => <Link key={href} href={href} className="destination-card"><span className="eyebrow">{number}</span><span className="destination-arrow" aria-hidden="true">↗</span><h3>{title}</h3><p>{description}</p></Link>)}
- </div></section>
+ const { selectedRoutine, session, routines, logs, loading, setShowIntake } = useWorkouts();
+ const workouts = summarizeWorkouts(logs);
+ const routine = session?.routine ?? selectedRoutine;
+ return <>
+ <PageHeading eyebrow="HOME / DASHBOARD" title="Your training, at a glance." description="Pick up where you left off." />
+ <WorkoutWeek logs={logs} />
+ <div className="dashboard-workspace">
+ <div className="dashboard-main">
+ <article className="next-workout panel"><div className="hero-clouds" aria-hidden="true"/><div className="next-workout-content"><p className="eyebrow">{session ? 'IN PROGRESS' : 'NEXT WORKOUT'}</p><h2>{routine?.title ?? (loading ? 'Loading your workout…' : 'Let’s get started')}</h2><p>{routine?.description || 'Choose a routine or put together a new workout.'}</p><div className="workout-facts"><span>{routine?.exercises.length ?? 0} exercises</span><span>{routine?.exercises.reduce((n,e)=>n+e.sets,0) ?? 0} working sets</span></div><div className="page-actions"><Link className="button-primary" href="/training">{session ? 'Continue workout' : 'Open workout'}</Link>{!session && <button className="button-secondary" onClick={()=>setShowIntake(true)}>New workout</button>}</div></div></article>
+ <section aria-label="Your progress"><div className="section-title"><h2>Your progress</h2><Link href="/activity">View activity</Link></div>{loading ? <p className="empty-card">Loading progress…</p> : <ProgressPanel logs={logs}/>}</section>
+ </div>
+ <aside className="dashboard-aside">
+ <section className="panel summary-panel"><h2>Training totals</h2><dl><div><dt>Logged sessions</dt><dd>{loading ? '—' : workouts.length}</dd></div><div><dt>Completed sets</dt><dd>{loading ? '—' : logs.length}</dd></div><div><dt>Saved routines</dt><dd>{loading ? '—' : routines.length}</dd></div></dl></section>
+ <section className="panel recent-panel"><div className="section-title"><h2>Recent sessions</h2><Link href="/activity">View all</Link></div>{workouts.length ? workouts.slice(0,4).map(w=><div className="session-list-item" key={w.sessionId}><span className="session-dot"/><div><strong>{w.exercises[0]}</strong><p>{new Date(w.date).toLocaleDateString(undefined,{month:'short',day:'numeric'})} · {w.setCount} sets</p></div></div>) : <p className="quiet-empty">Your completed sessions will appear here after you log your first set.</p>}</section>
+ <Link href="/schedule" className="panel schedule-shortcut"><span className="eyebrow">MAKE TIME FOR TRAINING</span><h2>Plan your week</h2><p>Find a time that works around your calendar.</p></Link>
+ </aside></div>
  </>;
 }
