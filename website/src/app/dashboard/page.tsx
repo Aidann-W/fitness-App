@@ -22,6 +22,7 @@ import type {
   WorkoutRoutine,
 } from '@/lib/types';
 import AccountModal from './AccountModal';
+import ExercisePicker from './ExercisePicker';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 import WorkoutSession from './WorkoutSession';
@@ -76,17 +77,25 @@ export default function Dashboard() {
 
   // Fetch the user's saved routines on load. Presets are always available.
   useEffect(() => {
+    // The user can build or generate a routine before this finishes, so keep
+    // anything created meanwhile and don't change what they have open.
+    const showLoaded = (loaded: WorkoutRoutine[]) => {
+      setRoutines((prev) => [
+        ...prev.filter((r) => !loaded.some((l) => l.id === r.id)),
+        ...loaded,
+      ]);
+      setSelectedRoutine((current) => current ?? loaded[0] ?? starterPresets[0]);
+    };
+
     async function loadRoutines() {
       try {
         const saved = await fetchRoutines();
         writeJson(ROUTINES_KEY, saved);
-        setRoutines(saved);
-        setSelectedRoutine(saved[0] ?? starterPresets[0]);
+        showLoaded(saved);
       } catch (err) {
         console.error('Failed to load routines:', err);
         const cached = readJson<WorkoutRoutine[]>(ROUTINES_KEY) ?? [];
-        setRoutines(cached);
-        setSelectedRoutine(cached[0] ?? starterPresets[0]);
+        showLoaded(cached);
         setNotice(
           cached.length > 0
             ? "Can't reach the cloud. Showing the routines saved on this device."
@@ -420,13 +429,11 @@ export default function Dashboard() {
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <input
-                          type="text"
-                          aria-label={`Exercise ${i + 1} name`}
-                          placeholder="Exercise name"
+                        <ExercisePicker
+                          label={`Exercise ${i + 1} name`}
                           value={ex.name}
-                          onChange={(e) => handleExerciseChange(i, "name", e.target.value)}
-                          className="w-full bg-transparent text-base font-semibold text-slate-900 focus:outline-none"
+                          onChange={(name) => handleExerciseChange(i, "name", name)}
+                          exclude={selectedRoutine.exercises.filter((_, j) => j !== i).map((other) => other.name)}
                         />
                         {ex.notes && <p className="text-xs text-slate-500">{ex.notes}</p>}
                         {lastSets[ex.name] && (
