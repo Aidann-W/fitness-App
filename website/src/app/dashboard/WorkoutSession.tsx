@@ -124,29 +124,29 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
 
   return (
     <div className="pb-24">
-      <div className="flex justify-between items-start gap-4 mb-6">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">{session.routine.title}</h2>
-          <p className="text-sm text-slate-400 mt-1">Workout in progress</p>
+          <h2 className="text-2xl font-semibold text-slate-900">{session.routine.title}</h2>
+          <p className="mt-1 text-sm text-slate-500">Workout in progress</p>
         </div>
         <button
           onClick={handleFinish}
           disabled={unsavedSets.length > 0}
-          className="shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
+          className="shrink-0 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
         >
           Finish
         </button>
       </div>
 
       {unsavedSets.length > 0 && (
-        <div role="status" className="flex items-center justify-between gap-3 mb-4 p-3 rounded-lg bg-amber-950/50 border border-amber-800 text-amber-200 text-sm">
+        <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
           <span>{unsavedSets.length} set(s) not saved yet. They&apos;re safe on this device.</span>
           <button onClick={retryUnsaved} className="shrink-0 min-h-11 px-3 font-medium underline">
             Retry
           </button>
         </div>
       )}
-      {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="mb-4 text-sm text-red-700">{error}</p>}
 
       <div className="space-y-4">
         {session.routine.exercises.map((exercise, exerciseIndex) => {
@@ -155,16 +155,16 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
           );
 
           return (
-            <section key={exercise.name} className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
-              <div className="flex justify-between items-start gap-3 mb-3">
+            <section key={exercise.name} className="rounded-2xl border border-[#d5e0e8] bg-[#f4f8fb] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-white">{exercise.name}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <h3 className="font-semibold text-slate-900">{exercise.name}</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {exercise.sets} × {exercise.reps}, {exercise.rest_seconds}s rest
                   </p>
-                  {exercise.notes && <p className="text-xs text-slate-500 mt-0.5">{exercise.notes}</p>}
+                  {exercise.notes && <p className="mt-0.5 text-xs text-slate-500">{exercise.notes}</p>}
                   {lastSets[exercise.name] && (
-                    <p className="text-xs text-blue-300 mt-1">
+                    <p className="mt-1 text-xs text-[#3d6d8c]">
                       Last time: {lastSets[exercise.name].map(formatSet).join(', ')}
                     </p>
                   )}
@@ -172,7 +172,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                 {!started && (
                   <button
                     onClick={() => onSwap(exerciseIndex)}
-                    className="shrink-0 min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+                    className="shrink-0 min-h-11 px-3 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
                   >
                     Swap
                   </button>
@@ -185,7 +185,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                   const label = `${exercise.name} set ${index + 1}`;
 
                   return (
-                    <div key={index} className="flex items-center gap-2 text-sm text-slate-300">
+                    <div key={index} className="flex items-center gap-2 text-sm text-slate-700">
                       <span className="w-6 text-slate-500">{index + 1}</span>
                       <input
                         type="number"
@@ -197,7 +197,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.weight}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { weight: e.target.value })}
-                        className="w-20 min-h-11 bg-slate-900 text-center text-white border border-slate-700 rounded px-1 disabled:opacity-60"
+                        className="h-11 w-20 rounded-xl border border-slate-300 bg-white text-center text-slate-900 disabled:opacity-60"
                       />
                       <input
                         type="number"
@@ -208,14 +208,14 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                         value={entry.reps}
                         disabled={entry.done}
                         onChange={(e) => updateEntry(exercise, index, { reps: e.target.value })}
-                        className="w-20 min-h-11 bg-slate-900 text-center text-white border border-slate-700 rounded px-1 disabled:opacity-60"
+                        className="h-11 w-20 rounded-xl border border-slate-300 bg-white text-center text-slate-900 disabled:opacity-60"
                       />
                       <button
                         onClick={() => (entry.done ? undoSet(exercise, index) : completeSet(exercise, index))}
                         disabled={!entry.done && entry.reps === ''}
                         aria-label={entry.done ? `Undo ${label}` : `Complete ${label}`}
-                        className={`ml-auto min-h-11 px-3 rounded-lg font-medium disabled:opacity-50 ${
-                          entry.done ? 'bg-emerald-900 text-emerald-200' : 'bg-slate-800 text-white'
+                        className={`ml-auto min-h-11 rounded-full px-4 font-semibold disabled:opacity-50 ${
+                          entry.done ? 'bg-[#e7eef3] text-[#1e4a66]' : 'bg-slate-900 text-white'
                         }`}
                       >
                         {entry.done ? '✓ Done' : 'Done'}
@@ -230,7 +230,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
       </div>
 
       {restLeft > 0 && (
-        <div role="timer" className="fixed bottom-4 inset-x-4 z-10 max-w-md mx-auto flex items-center justify-between gap-3 bg-blue-950 border border-blue-700 rounded-xl px-4 py-2 text-white">
+        <div role="timer" className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-[#d5e0e8] bg-white px-5 py-2 text-slate-900 shadow-[0_12px_40px_rgba(30,58,82,0.12)]">
           <span className="font-semibold">
             Rest {Math.floor(restLeft / 60)}:{String(restLeft % 60).padStart(2, '0')}
           </span>

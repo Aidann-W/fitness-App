@@ -260,102 +260,103 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
-      <header className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8 pb-4 border-b border-slate-800">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-sky-300 bg-clip-text text-transparent">
-            CumulusFit Dashboard
-          </h1>
-          <p className="text-slate-400 text-sm">Cloud-Synced Workout Routines & AI Adaptation</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {!session && account && (
-            account.isAnonymous ? (
-              <button
-                onClick={() => setShowAccount(true)}
-                className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
-              >
-                Save your progress
-              </button>
-            ) : (
-              <>
-                <span className="text-sm text-slate-400">{account.email}</span>
+    <div className="min-h-screen bg-[#e7eef3] font-sans text-slate-800">
+      <header className="border-b border-[#d5e0e8] bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-8 py-5">
+          <div className="flex items-baseline gap-3">
+            <span className="text-xl font-semibold tracking-tight text-slate-900">Forge</span>
+            <span className="text-sm text-slate-500">Strength training</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!session && account && (
+              account.isAnonymous ? (
                 <button
-                  onClick={handleLogOut}
-                  className="min-h-11 px-3 text-sm text-blue-400 hover:text-blue-300"
+                  onClick={() => setShowAccount(true)}
+                  className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]"
                 >
-                  Log out
+                  Save your progress
                 </button>
-              </>
-            )
-          )}
-          <button
-            onClick={() => editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] })}
-            disabled={Boolean(session)}
-            className="min-h-11 px-4 py-2 rounded-lg border border-slate-700 text-slate-200 hover:border-slate-500 disabled:opacity-50 transition"
-          >
-            Build my own
-          </button>
-          <button
-            onClick={() => setShowIntake(true)}
-            disabled={Boolean(session)}
-            className="min-h-11 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2 rounded-lg transition"
-          >
-            + Generate with Gemini AI
-          </button>
+              ) : (
+                <>
+                  <span className="px-2 text-sm text-slate-500">{account.email}</span>
+                  <button
+                    onClick={handleLogOut}
+                    className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]"
+                  >
+                    Log out
+                  </button>
+                </>
+              )
+            )}
+            <button
+              onClick={() => editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] })}
+              disabled={Boolean(session)}
+              className="min-h-11 rounded-full border border-[#d5e0e8] bg-white px-4 text-sm font-medium text-slate-800 hover:border-[#b7c9d6] disabled:opacity-50"
+            >
+              Build my own
+            </button>
+            <button
+              onClick={() => setShowIntake(true)}
+              disabled={Boolean(session)}
+              className="min-h-11 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+            >
+              Generate
+            </button>
+          </div>
         </div>
       </header>
 
       {notice && (
-        <p role="status" className="max-w-6xl mx-auto mb-6 p-3 rounded-lg bg-amber-950/50 border border-amber-800 text-amber-200 text-sm">
+        <p role="status" className="mx-auto mt-6 max-w-6xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           {notice}
         </p>
       )}
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Sidebar: Saved Routines */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-slate-300">Your Routines</h2>
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-8 py-8 md:grid-cols-3">
+        <div className="space-y-3">
+          <h2 className="px-1 text-sm font-medium text-[#3d6d8c]">Your routines</h2>
           {loading ? (
-            <div className="p-4 bg-slate-900 rounded-lg animate-pulse">Loading routines...</div>
+            <div className="animate-pulse rounded-3xl border border-[#d5e0e8] bg-white p-4 text-slate-500">Loading routines...</div>
           ) : (
-            [...routines, ...starterPresets].map((item, idx) => (
-              <div
-                key={item.id || idx}
-                onClick={() => setSelectedRoutine(item)}
-                className={`p-4 rounded-xl border cursor-pointer transition ${
-                  (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title)
-                    ? 'border-blue-500 bg-blue-950/30'
-                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
-                }`}
-              >
-                <h3 className="font-bold text-white">{item.title}</h3>
-                <p className="text-xs text-slate-400 line-clamp-2 mt-1">{item.description}</p>
-                <span className="inline-block mt-3 text-xs bg-slate-800 text-blue-400 px-2.5 py-1 rounded-full">
-                  {item.exercises.length} Exercises
-                </span>
-              </div>
-            ))
+            [...routines, ...starterPresets].map((item, idx) => {
+              const selected = (selectedRoutine?.id ?? selectedRoutine?.title) === (item.id ?? item.title);
+              return (
+                <div
+                  key={item.id || idx}
+                  onClick={() => setSelectedRoutine(item)}
+                  className={`cursor-pointer rounded-3xl border bg-white p-4 transition ${
+                    selected
+                      ? 'border-[#3d6d8c] shadow-[0_12px_40px_rgba(30,58,82,0.06)]'
+                      : 'border-[#d5e0e8] hover:border-[#b7c9d6]'
+                  }`}
+                >
+                  <h3 className="font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-500">{item.description}</p>
+                  <span className="mt-3 inline-block rounded-full bg-[#e7eef3] px-2.5 py-1 text-xs font-semibold text-[#3d6d8c]">
+                    {item.exercises.length} exercises
+                  </span>
+                </div>
+              );
+            })
           )}
 
           {recentWorkouts.length > 0 && (
             <>
-              <h2 className="text-lg font-semibold text-slate-300 pt-4">Recent Workouts</h2>
+              <h2 className="px-1 pt-4 text-sm font-medium text-[#3d6d8c]">Recent workouts</h2>
               {recentWorkouts.map((workout) => (
-                <div key={workout.sessionId} className="p-4 rounded-xl border border-slate-800 bg-slate-900/60">
-                  <p className="text-sm font-semibold text-white">
+                <div key={workout.sessionId} className="rounded-3xl border border-[#d5e0e8] bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">
                     {new Date(workout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     {' · '}{workout.setCount} set(s)
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">{workout.exercises.join(', ')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{workout.exercises.join(', ')}</p>
                 </div>
               ))}
             </>
           )}
         </div>
 
-        {/* Main Content: Interactive Editor */}
-        <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+        <div className="rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.06)] md:col-span-2">
           {session ? (
             <WorkoutSession
               session={session}
@@ -366,14 +367,14 @@ export default function Dashboard() {
             />
           ) : selectedRoutine ? (
             <div>
-              <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
-                <div className="flex-1 min-w-48">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-48 flex-1">
                   <input
                     type="text"
                     aria-label="Routine name"
                     value={selectedRoutine.title}
                     onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })}
-                    className="w-full bg-transparent text-2xl font-bold text-white focus:outline-none border-b border-transparent focus:border-blue-500"
+                    className="w-full border-b border-transparent bg-transparent text-2xl font-semibold text-slate-900 focus:border-[#3d6d8c] focus:outline-none"
                   />
                   <input
                     type="text"
@@ -381,14 +382,14 @@ export default function Dashboard() {
                     placeholder="Add a description"
                     value={selectedRoutine.description}
                     onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })}
-                    className="w-full bg-transparent text-sm text-slate-400 mt-1 focus:outline-none border-b border-transparent focus:border-blue-500"
+                    className="mt-1 w-full border-b border-transparent bg-transparent text-sm text-slate-500 focus:border-[#3d6d8c] focus:outline-none"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   {isStored(selectedRoutine) && (
                     <button
                       onClick={() => handleDeleteRoutine(selectedRoutine)}
-                      className="min-h-11 px-3 text-sm text-slate-400 hover:text-red-300"
+                      className="min-h-11 rounded-full px-3 text-sm text-slate-500 hover:text-red-700"
                     >
                       Delete
                     </button>
@@ -396,7 +397,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => startWorkout(selectedRoutine)}
                     disabled={!canStart(selectedRoutine)}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
+                    className="min-h-11 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                   >
                     Start workout
                   </button>
@@ -404,58 +405,58 @@ export default function Dashboard() {
               </div>
 
               {!canStart(selectedRoutine) && (
-                <p className="text-sm text-amber-200 mb-3">
+                <p className="mb-3 text-sm text-amber-800">
                   Give every exercise a different name to start this workout.
                 </p>
               )}
 
               <div className="space-y-3">
                 {selectedRoutine.exercises.map((ex, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
-                    <div className="flex-1 min-w-0">
+                  <div key={i} className="flex flex-col gap-3 rounded-2xl border border-[#d5e0e8] bg-[#f4f8fb] p-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
                       <input
                         type="text"
                         aria-label={`Exercise ${i + 1} name`}
                         placeholder="Exercise name"
                         value={ex.name}
                         onChange={(e) => handleExerciseChange(i, 'name', e.target.value)}
-                        className="bg-transparent text-white font-semibold focus:outline-none focus:border-blue-500 border-b border-transparent w-full"
+                        className="w-full border-b border-transparent bg-transparent font-semibold text-slate-900 focus:border-[#3d6d8c] focus:outline-none"
                       />
-                      {ex.notes && <p className="text-xs text-slate-500 mt-0.5">{ex.notes}</p>}
+                      {ex.notes && <p className="mt-0.5 text-xs text-slate-500">{ex.notes}</p>}
                       {lastSets[ex.name] && (
-                        <p className="text-xs text-blue-300 mt-1">
+                        <p className="mt-1 text-xs text-[#3d6d8c]">
                           Last time: {lastSets[ex.name].map(formatSet).join(', ')}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <div className="text-center">
-                        <span className="text-xs text-slate-500 block">Sets</span>
+                        <span className="block text-xs text-slate-500">Sets</span>
                         <input
                           type="number"
                           value={ex.sets}
                           onChange={(e) => handleExerciseChange(i, 'sets', parseInt(e.target.value) || 1)}
-                          className="w-12 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
+                          className="h-11 w-14 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
                         />
                       </div>
                       <div className="text-center">
-                        <span className="text-xs text-slate-500 block">Reps</span>
+                        <span className="block text-xs text-slate-500">Reps</span>
                         <input
                           type="text"
                           value={ex.reps}
                           onChange={(e) => handleExerciseChange(i, 'reps', e.target.value)}
-                          className="w-16 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
+                          className="h-11 w-16 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
                         />
                       </div>
                       <div className="text-center">
-                        <span className="text-xs text-slate-500 block">Rest (s)</span>
+                        <span className="block text-xs text-slate-500">Rest (s)</span>
                         <input
                           type="number"
                           min="0"
                           aria-label={`Exercise ${i + 1} rest in seconds`}
                           value={ex.rest_seconds}
                           onChange={(e) => handleExerciseChange(i, 'rest_seconds', parseInt(e.target.value) || 0)}
-                          className="w-14 bg-slate-900 text-center text-white border border-slate-700 rounded px-1"
+                          className="h-11 w-16 rounded-xl border border-slate-300 bg-white text-center text-slate-900"
                         />
                       </div>
                     </div>
@@ -463,7 +464,7 @@ export default function Dashboard() {
                       {ex.name.trim() && (
                         <button
                           onClick={() => setSwapIndex(i)}
-                          className="min-h-11 px-2 text-sm text-blue-400 hover:text-blue-300"
+                          className="min-h-11 px-2 text-sm font-medium text-[#3d6d8c] hover:text-slate-900"
                         >
                           Swap
                         </button>
@@ -471,7 +472,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => removeExercise(i)}
                         aria-label={`Remove exercise ${i + 1}`}
-                        className="min-h-11 px-2 text-sm text-slate-400 hover:text-red-300"
+                        className="min-h-11 px-2 text-sm text-slate-500 hover:text-red-700"
                       >
                         Remove
                       </button>
@@ -487,13 +488,13 @@ export default function Dashboard() {
                     exercises: [...selectedRoutine.exercises, blankExercise],
                   })
                 }
-                className="mt-3 w-full min-h-11 rounded-xl border border-dashed border-slate-700 text-sm text-slate-300 hover:border-slate-500"
+                className="mt-3 min-h-11 w-full rounded-2xl border border-dashed border-[#b7c9d6] text-sm font-medium text-slate-600 hover:border-[#3d6d8c] hover:text-slate-900"
               >
                 + Add exercise
               </button>
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500">Select a routine from the list</div>
+            <div className="py-12 text-center text-slate-500">Select a routine from the list</div>
           )}
         </div>
       </main>

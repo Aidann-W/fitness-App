@@ -9,7 +9,7 @@ const EQUIPMENT = ['Barbell', 'Dumbbells', 'Bench', 'Squat rack', 'Cable machine
 const MINUTES = [15, 30, 45, 60];
 const FOCUS = ['Full body', 'Upper body', 'Lower body', 'Push', 'Pull'];
 
-const fieldClass = 'w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white';
+const fieldClass = 'w-full h-11 rounded-xl border border-slate-300 bg-white px-3 text-slate-900';
 
 interface Props {
   onGenerate: (answers: RoutineAnswers) => Promise<void>;
@@ -49,17 +49,17 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900/30 p-4">
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby="intake-title"
         onSubmit={handleSubmit}
-        className="w-full max-w-md max-h-full overflow-y-auto space-y-4 bg-slate-900 border border-slate-700 rounded-2xl p-6"
+        className="w-full max-w-md max-h-full overflow-y-auto space-y-4 rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.12)]"
       >
-        <h2 id="intake-title" className="text-xl font-bold text-white">Generate a workout</h2>
+        <h2 id="intake-title" className="text-xl font-semibold text-slate-900">Generate a workout</h2>
 
-        <label className="block text-sm text-slate-300 space-y-1">
+        <label className="block space-y-1 text-sm text-slate-700">
           <span>Goal</span>
           <select
             value={answers.goal}
@@ -70,7 +70,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </select>
         </label>
 
-        <label className="block text-sm text-slate-300 space-y-1">
+        <label className="block space-y-1 text-sm text-slate-700">
           <span>Experience</span>
           <select
             value={answers.experience}
@@ -81,7 +81,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </select>
         </label>
 
-        <label className="block text-sm text-slate-300 space-y-1">
+        <label className="block space-y-1 text-sm text-slate-700">
           <span>Today&apos;s focus</span>
           <select
             value={answers.focus}
@@ -92,7 +92,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </select>
         </label>
 
-        <label className="block text-sm text-slate-300 space-y-1">
+        <label className="block space-y-1 text-sm text-slate-700">
           <span>Time</span>
           <select
             value={answers.minutes}
@@ -103,7 +103,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </select>
         </label>
 
-        <fieldset className="text-sm text-slate-300">
+        <fieldset className="text-sm text-slate-700">
           <legend className="mb-1">Equipment</legend>
           <div className="grid grid-cols-2 gap-1">
             {EQUIPMENT.map((item) => (
@@ -120,21 +120,21 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </div>
         </fieldset>
 
-        {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
 
         <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="px-4 py-2.5 rounded-lg text-slate-300 hover:text-white disabled:opacity-50"
+            className="rounded-full px-4 py-2.5 text-slate-600 hover:text-slate-900 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={pending || answers.equipment.length === 0}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-4 py-2.5 rounded-lg transition"
+            className="rounded-full bg-slate-900 px-4 py-2.5 font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
           >
             {pending ? 'Generating…' : 'Generate'}
           </button>
