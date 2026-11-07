@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Forge",
-  description: "Strength training workouts, logged sets, and progress.",
+  title: "CumulusFit | Reach a little higher",
+  description: "Elevate your strength training with CumulusFit. Personalized AI workouts, flexible routines, and every set saved in the cloud.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

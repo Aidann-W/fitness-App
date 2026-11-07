@@ -41,13 +41,13 @@ export default function AccountModal({ onSignedIn, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/30 p-4">
+    <div className="fixed inset-0 z-20 flex items-center justify-center cloud-overlay bg-slate-900/30 p-4">
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-title"
         onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.12)]"
+        className="cloud-dialog w-full max-w-md space-y-4 rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.12)]"
       >
         <h2 id="account-title" className="text-xl font-semibold text-slate-900">
           {creating ? 'Save your progress' : 'Log in'}
