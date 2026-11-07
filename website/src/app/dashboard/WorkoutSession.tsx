@@ -2,19 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import { deleteSetLog, logSet } from '@/lib/api';
-import { formatSet } from '@/lib/history';
+import { formatSet, formatTarget, nextTarget, type Target } from '@/lib/history';
 import type { ActiveSession, Exercise, LoggedSet, SetEntry } from '@/lib/types';
 
 const setKey = (exerciseName: string, index: number) => `${exerciseName}:${index}`;
 
 // Starts from what was lifted last time, otherwise the plan. Weight stays blank
 // with no history, because the app should not invent a starting load.
-const emptyEntry = (exercise: Exercise, previous?: LoggedSet): SetEntry => ({
-  reps: String(previous?.reps ?? (parseInt(exercise.reps) || '')),
-  weight: previous && previous.weight > 0 ? String(previous.weight) : '',
-  done: false,
-  unsaved: false,
-});
+// Starts from the next-session target, else last time, else the plan. Weight
+// stays blank with no history, because the app should not invent a load.
+const emptyEntry = (exercise: Exercise, previous?: LoggedSet, target?: Target | null): SetEntry => {
+  const weight = target?.weight ?? previous?.weight ?? 0;
+  return {
+    reps: String(target?.reps ?? previous?.reps ?? (parseInt(exercise.reps) || '')),
+    weight: weight > 0 ? String(weight) : '',
+    done: false,
+    unsaved: false,
+  };
+};
+
+export function TargetLine({ target }: { target: Target | null }) {
+  if (!target) return null;
+  return (
+    <p className="mt-0.5 text-xs text-slate-700">
+      <span className="font-semibold">Target: {formatTarget(target)}</span> · {target.note}
+    </p>
+  );
+}
 
 interface Props {
   session: ActiveSession;
@@ -41,7 +55,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
 
   const defaultEntry = (exercise: Exercise, index: number) => {
     const previous = lastSets[exercise.name];
-    return emptyEntry(exercise, previous?.[index] ?? previous?.at(-1));
+    return emptyEntry(exercise, previous?.[index] ?? previous?.at(-1), nextTarget(previous, exercise.reps));
   };
 
   const entryFor = (exercise: Exercise, index: number) =>
@@ -177,6 +191,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
                       Last time: {lastSets[exercise.name].map(formatSet).join(', ')}
                     </p>
                   )}
+                  <TargetLine target={nextTarget(lastSets[exercise.name], exercise.reps)} />
                 </div>
                 {!started && (
                   <button

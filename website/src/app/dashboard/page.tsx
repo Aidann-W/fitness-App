@@ -11,7 +11,7 @@ import {
   swapExercise,
   updateRoutine,
 } from '@/lib/api';
-import { formatSet, lastSetsByExercise, summarizeWorkouts } from '@/lib/history';
+import { formatSet, lastSetsByExercise, nextTarget, summarizeWorkouts } from '@/lib/history';
 import { starterPresets } from '@/lib/mockData';
 import { BUSY_KEY } from '@/lib/schedule';
 import { readJson, writeJson } from '@/lib/storage';
@@ -27,7 +27,8 @@ import ExercisePicker from './ExercisePicker';
 import ScheduleSection from './ScheduleSection';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
-import WorkoutSession from './WorkoutSession';
+import ProgressPanel from './ProgressPanel';
+import WorkoutSession, { TargetLine } from './WorkoutSession';
 
 const ROUTINES_KEY = 'cumulusfit.routines';
 const SESSION_KEY = 'cumulusfit.activeSession';
@@ -433,6 +434,7 @@ export default function Dashboard() {
                         {lastSets[ex.name] && (
                           <p className="text-xs text-[#3d6d8c]">Last time: {lastSets[ex.name].map(formatSet).join(", ")}</p>
                         )}
+                        <TargetLine target={nextTarget(lastSets[ex.name], ex.reps)} />
                       </div>
                       <div className="flex items-center gap-3 text-sm">
                         <label className="text-center text-xs text-slate-500">
@@ -528,6 +530,7 @@ export default function Dashboard() {
               </div>
               <div id="activity" className="scroll-mt-6">
                 <p className="eyebrow mb-2">EVERY SET ADDS UP</p><h2 className="mb-4 text-lg font-semibold text-slate-900">Recent activity</h2>
+                <ProgressPanel logs={logs} />
                 {recentWorkouts.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-[#b7c9d6] bg-white/70 p-6 text-sm leading-6 text-slate-600">
                     Your next chapter starts with one set. Complete a workout to see your activity take shape here.
