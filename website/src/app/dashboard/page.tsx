@@ -13,6 +13,7 @@ import {
 } from '@/lib/api';
 import { formatSet, lastSetsByExercise, summarizeWorkouts } from '@/lib/history';
 import { starterPresets } from '@/lib/mockData';
+import { BUSY_KEY } from '@/lib/schedule';
 import { readJson, writeJson } from '@/lib/storage';
 import type {
   ActiveSession,
@@ -23,6 +24,7 @@ import type {
 } from '@/lib/types';
 import AccountModal from './AccountModal';
 import ExercisePicker from './ExercisePicker';
+import ScheduleSection from './ScheduleSection';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 import WorkoutSession from './WorkoutSession';
@@ -168,7 +170,7 @@ export default function Dashboard() {
   };
 
   const reloadAfterAccountChange = () => {
-    [ROUTINES_KEY, LOGS_KEY, SESSION_KEY].forEach((key) => writeJson(key, null));
+    [ROUTINES_KEY, LOGS_KEY, SESSION_KEY, BUSY_KEY].forEach((key) => writeJson(key, null));
     window.location.reload();
   };
 
@@ -280,7 +282,7 @@ export default function Dashboard() {
           <a href="/" className="brand" aria-label="CumulusFit home">
 <span className="brand-mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M9 23h15a6 6 0 0 0 .3-12 8.5 8.5 0 0 0-16-1A6.5 6.5 0 0 0 9 23Z" stroke="currentColor" strokeWidth="1.8"/><path d="m13 18 3-5 3 5m-3-5v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
 <span>Cumulus<span className="brand-fit">Fit</span><small>A little stronger. A little higher.</small></span></a>
-{!session && <nav className="cloud-nav" aria-label="Main navigation"><a href="#training" aria-current="page">Training</a><a href="#routines">My routines</a><a href="#activity">Activity</a></nav>}
+{!session && <nav className="cloud-nav" aria-label="Main navigation"><a href="#training" aria-current="page">Training</a><a href="#routines">My routines</a><a href="#activity">Activity</a><a href="#schedule">Schedule</a></nav>}
           <div className="flex flex-wrap items-center gap-2">
             {!session && account && (
               account.isAnonymous ? (
@@ -546,6 +548,8 @@ export default function Dashboard() {
                 )}
               </div>
             </section>
+
+            <ScheduleSection />
           </>
         )}
       </main>

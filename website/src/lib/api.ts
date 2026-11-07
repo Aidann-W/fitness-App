@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Exercise, LoggedSet, RoutineAnswers, SetLog, WorkoutRoutine } from './types';
+import type { GymSession, PlanDay, PlannedSlot, SchedulePrefs } from './schedule';
 
 async function loadAccessToken() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -91,5 +92,30 @@ export function deleteSetLog(log: Pick<SetLog, 'session_id' | 'exercise_name' | 
   return request<{ ok: true }>('/api/set-logs', {
     method: 'DELETE',
     body: JSON.stringify(log),
+  });
+}
+
+export function fetchSchedule() {
+  return request<GymSession[]>('/api/schedule');
+}
+
+export function saveGymSession(session: GymSession) {
+  return request<{ ok: true }>('/api/schedule', {
+    method: 'PATCH',
+    body: JSON.stringify(session),
+  });
+}
+
+export function deleteGymSession(id: string) {
+  return request<{ ok: true }>('/api/schedule', {
+    method: 'DELETE',
+    body: JSON.stringify({ id }),
+  });
+}
+
+export function planSchedule(days: PlanDay[], prefs: SchedulePrefs, count: number) {
+  return request<{ sessions: PlannedSlot[] }>('/api/plan-schedule', {
+    method: 'POST',
+    body: JSON.stringify({ days, prefs, count }),
   });
 }

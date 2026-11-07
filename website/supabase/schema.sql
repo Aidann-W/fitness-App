@@ -54,3 +54,29 @@ create policy "Users manage their own set logs"
   on public.set_logs for all to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+-- Gym schedule. Only the user's planned gym sessions are stored here. Their
+-- imported calendar stays on their device.
+create table if not exists public.gym_sessions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  title      text not null default 'Gym session',
+  starts_at  timestamptz not null,
+  ends_at    timestamptz not null,
+  source     text not null default 'manual' check (source in ('ai', 'manual')),
+  created_at timestamptz not null default now(),
+  check (ends_at > starts_at)
+);
+
+create index if not exists gym_sessions_user_start_idx
+  on public.gym_sessions (user_id, starts_at);
+
+alter table public.gym_sessions enable row level security;
+
+grant select, insert, update, delete on public.gym_sessions to authenticated;
+
+drop policy if exists "Users manage their own gym sessions" on public.gym_sessions;
+create policy "Users manage their own gym sessions"
+  on public.gym_sessions for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
