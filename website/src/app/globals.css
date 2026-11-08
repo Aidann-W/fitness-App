@@ -323,3 +323,5 @@ input:not([type="checkbox"]):not([type="radio"]), select { min-width: 0; }
 .intake-optional { color: #697d93; font-size: 12px; font-weight: 400; }
 .intake-help { display: block; color: #62768e; font-size: 12px; line-height: 1.6; }
 .gemini-credit { margin-top: 16px; text-align: right; color: #697d93; font-size: 11px; letter-spacing: .2px; }
+
+.editable-routine-title { text-decoration: underline; text-decoration-color: #7d9bbb; text-decoration-thickness: 1px; text-underline-offset: 7px; }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Type } from '@google/genai';
 import { generateWithFallback } from '@/lib/gemini';
 import {
+  availablePlanDays,
   plannerSlots,
   validateSlots,
   type PlanDay,
@@ -46,10 +47,14 @@ export async function POST(req: Request) {
   if (
     !Array.isArray(days) || days.length === 0 || days.length > 14 ||
     !Number.isInteger(count) || count < 1 || count > 7 ||
-    !(prefs?.minutes >= 15 && prefs.minutes <= 240)
+    !(prefs?.minutes >= 15 && prefs.minutes <= 240) ||
+    (prefs.availableDates !== undefined && (!Array.isArray(prefs.availableDates) || prefs.availableDates.length > 14 || prefs.availableDates.some(date => typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date))))
   ) {
     return NextResponse.json({ error: 'Invalid schedule request' }, { status: 400 });
   }
+
+  const eligibleDays = availablePlanDays(days, prefs);
+  if (eligibleDays.length === 0) return NextResponse.json({ sessions: [] });
 
   let fromGemini: PlannedSlot[] = [];
   try {
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
         gymCloses: prefs.latest,
         preferredTimeOfDay: prefs.timeOfDay,
         userNotes: String(prefs.notes ?? '').slice(0, 300),
-        days,
+        days: eligibleDays,
       }),
       {
         responseMimeType: 'application/json',
@@ -76,11 +81,11 @@ export async function POST(req: Request) {
       }
     );
     const suggestions = JSON.parse(response.text ?? '').sessions ?? [];
-    fromGemini = validateSlots(suggestions, days, prefs, count);
+    fromGemini = validateSlots(suggestions, eligibleDays, prefs, count);
   } catch (error) {
     console.error('Plan schedule error:', error);
   }
 
-  const sessions = [...fromGemini, ...plannerSlots(days, prefs, count, fromGemini)];
+  const sessions = [...fromGemini, ...plannerSlots(eligibleDays, prefs, count, fromGemini)];
   return NextResponse.json({ sessions });
 }

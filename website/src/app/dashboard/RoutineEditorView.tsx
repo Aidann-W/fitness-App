@@ -6,13 +6,13 @@ import { formatSet, nextTarget } from '@/lib/history';
 import { PageHeading } from './PageHeading';
 export default function RoutineEditorView() {
     const { selectedRoutine, loading, lastSets, editRoutine, buildRoutine, handleDeleteRoutine, setShowIntake, startWorkout, setSwapIndex, handleExerciseChange, removeExercise } = useWorkouts();
-    return <><PageHeading eyebrow="MY ROUTINES" title="Edit routine" description="Adjust your workout, then start when you’re ready."/>
+    return <><PageHeading eyebrow="HOME / ROUTINES / EDIT" title="Edit routine"/>
   <><section className="training-overview">
         <article className="session-hero training-routine"><div className="hero-clouds" aria-hidden="true"/><div className="relative z-[1]"><div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
                     <div>
-                      <p className="hero-label"><span className="live-dot"/> TODAY’S WORKOUT</p>
+                      <p className="hero-label"><span className="live-dot"/> THIS WORKOUT TODAY</p>
                       {selectedRoutine ? (<>
-                          <textarea rows={1} aria-label="Routine name" value={selectedRoutine.title} onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })} className="hero-title mt-3 w-full bg-transparent text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl"/>
+                          <textarea rows={1} aria-label="Routine name" value={selectedRoutine.title} onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })} className="hero-title editable-routine-title mt-3 w-full bg-transparent text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl"/>
                           <textarea rows={1} aria-label="Routine description" placeholder="Add a short description" value={selectedRoutine.description} onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })} className="hero-description mt-2 w-full bg-transparent text-sm text-slate-600"/>
                         </>) : (<h2 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
                           {loading ? "Loading today's session" : "No session yet"}
