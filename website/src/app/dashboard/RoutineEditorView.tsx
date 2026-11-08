@@ -1,108 +1,43 @@
 'use client';
+import { useState } from 'react';
 import { useWorkouts, canStart, isStored, blankExercise } from './WorkoutProvider';
 import ExercisePicker from './ExercisePicker';
 import { TargetLine } from './WorkoutSession';
 import { formatSet, nextTarget } from '@/lib/history';
-import { PageHeading } from './PageHeading';
+import './RoutineEditorView.css';
+
 export default function RoutineEditorView() {
-    const { selectedRoutine, loading, lastSets, editRoutine, buildRoutine, handleDeleteRoutine, setShowIntake, startWorkout, setSwapIndex, handleExerciseChange, removeExercise } = useWorkouts();
-    return <><PageHeading eyebrow="HOME / ROUTINES / EDIT" title="Edit routine"/>
-  <><section className="training-overview">
-        <article className="session-hero training-routine"><div className="hero-clouds" aria-hidden="true"/><div className="relative z-[1]"><div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
-                    <div>
-                      <p className="hero-label"><span className="live-dot"/> THIS WORKOUT TODAY</p>
-                      {selectedRoutine ? (<>
-                          <textarea rows={1} aria-label="Routine name" value={selectedRoutine.title} onChange={(e) => editRoutine({ ...selectedRoutine, title: e.target.value })} className="hero-title editable-routine-title mt-3 w-full bg-transparent text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl"/>
-                          <textarea rows={1} aria-label="Routine description" placeholder="Add a short description" value={selectedRoutine.description} onChange={(e) => editRoutine({ ...selectedRoutine, description: e.target.value })} className="hero-description mt-2 w-full bg-transparent text-sm text-slate-600"/>
-                        </>) : (<h2 className="mt-2 text-4xl font-semibold tracking-tight text-slate-900">
-                          {loading ? "Loading today's session" : "No session yet"}
-                        </h2>)}
-                      <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">Edit your routine below, then start when you’re ready.</p>
-                    </div>
-                    {selectedRoutine && (<div className="flex flex-wrap items-center gap-3">
-                        <button onClick={() => startWorkout(selectedRoutine)} disabled={!canStart(selectedRoutine)} className="min-h-12 rounded-full bg-slate-900 px-6 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                          Start workout <span aria-hidden="true" className="ml-3">↗</span>
-                        </button>
-                        <span className="rounded-full bg-[#e7eef3] px-3 py-1 text-xs font-semibold text-[#3d6d8c]">
-                          {selectedRoutine.exercises.length} exercises
-                        </span>
-                        {isStored(selectedRoutine) && (<button onClick={() => handleDeleteRoutine(selectedRoutine)} className="min-h-11 rounded-full px-3 text-sm text-slate-500 hover:text-red-700">
-                            Delete
-                          </button>)}
-                      </div>)}
-                    {selectedRoutine && !canStart(selectedRoutine) && (<p className="text-sm text-amber-800">Give every exercise a different name to start this workout.</p>)}
-                  </div>
-                </div>
-              </article>
-
-              <aside className="generate-card flex flex-col justify-between rounded-[28px] p-6 sm:p-7">
-                <div>
-                  <span className="ai-symbol" aria-hidden="true">✧</span><p className="generator-credit">Powered by Gemini</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Create a workout</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Tell us what you want to work on and how much time you have. We’ll put a session together.
-                  </p>
-                </div>
-                <div className="mt-6 flex flex-col gap-3">
-                  <button onClick={() => setShowIntake(true)} className="min-h-12 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800">
-                    Create workout
-                  </button>
-                  <button onClick={buildRoutine} className="min-h-12 rounded-full border border-[#d5e0e8] bg-white px-5 text-sm font-medium text-slate-800 hover:border-[#b7c9d6]">
-                    Or build my own
-                  </button>
-                </div>
-              </aside>
-            </section>
-
-            <section className="exercise-section">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-                <h2 className="text-lg font-semibold text-slate-900">Exercise plan <span className="section-count">{selectedRoutine?.exercises.length ?? 0}</span></h2>
-
-              </div>
-              {loading ? (<div className="rounded-[28px] border border-[#d5e0e8] bg-white p-6 text-slate-500">Loading routines...</div>) : selectedRoutine ? (<div className="exercise-grid training-list">
-                  {selectedRoutine.exercises.map((ex, i) => (<div key={i} className="exercise-card exercise-editor-card">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e7eef3] text-sm font-semibold text-[#3d6d8c]">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <ExercisePicker label={`Exercise ${i + 1} name`} value={ex.name} onChange={(name) => handleExerciseChange(i, "name", name)} exclude={selectedRoutine.exercises.filter((_, j) => j !== i).map((other) => other.name)}/>
-                        {ex.notes && <p className="text-xs text-slate-500">{ex.notes}</p>}
-                        {lastSets[ex.name] && (<p className="text-xs text-[#3d6d8c]">Last time: {lastSets[ex.name].map(formatSet).join(", ")}</p>)}
-                        <TargetLine target={nextTarget(lastSets[ex.name], ex.reps)}/>
-                      </div>
-                      <div className="exercise-fields">
-                        <label className="text-center text-xs text-slate-500">
-                          Sets
-                          <input type="number" value={ex.sets} onChange={(e) => handleExerciseChange(i, "sets", parseInt(e.target.value) || 1)} className="mt-1 block h-11 w-14 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"/>
-                        </label>
-                        <label className="text-center text-xs text-slate-500">
-                          Reps
-                          <input type="text" value={ex.reps} onChange={(e) => handleExerciseChange(i, "reps", e.target.value)} className="mt-1 block h-11 w-16 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"/>
-                        </label>
-                        <label className="text-center text-xs text-slate-500">
-                          Rest (sec)
-                          <input type="number" min="0" aria-label={`Exercise ${i + 1} rest in seconds`} value={ex.rest_seconds} onChange={(e) => handleExerciseChange(i, "rest_seconds", parseInt(e.target.value) || 0)} className="mt-1 block h-11 w-16 rounded-xl border border-slate-300 bg-[#f4f8fb] text-center text-slate-900"/>
-                        </label>
-                      </div>
-                      <div className="exercise-actions">
-                        {ex.name.trim() && (<button onClick={() => setSwapIndex(i)} className="swap-button min-h-11 px-2 text-sm font-medium">
-                            Swap
-                          </button>)}
-                        <button onClick={() => removeExercise(i)} aria-label={`Remove exercise ${i + 1}`} className="remove-button min-h-11 px-2 text-sm">
-                          Remove
-                        </button>
-                      </div>
-                    </div>))}
-                  <button onClick={() => editRoutine({
-                    ...selectedRoutine,
-                    exercises: [...selectedRoutine.exercises, blankExercise],
-                })} className="min-h-12 w-full rounded-[24px] border border-dashed border-[#b7c9d6] bg-white/60 text-sm font-medium text-slate-600 hover:border-[#3d6d8c]">
-                    + Add exercise
-                  </button>
-                </div>) : (<div className="rounded-[28px] border border-dashed border-[#b7c9d6] bg-white/70 p-8 text-slate-500">
-                  Create a workout or open one from My routines.
-                </div>)}
-            </section>
-
-        </>
-  </>;
+  const { selectedRoutine: routine, loading, lastSets, editRoutine, buildRoutine, handleDeleteRoutine, setShowIntake, startWorkout, setSwapIndex, handleExerciseChange, removeExercise } = useWorkouts();
+  const [selection, setSelection] = useState(0);
+  const index = Math.min(selection, Math.max(0, (routine?.exercises.length ?? 0) - 1));
+  const exercise = routine?.exercises[index];
+  const totalSets = routine?.exercises.reduce((total, item) => total + item.sets, 0) ?? 0;
+  const addExercise = () => {
+    if (!routine) return;
+    setSelection(routine.exercises.length);
+    editRoutine({ ...routine, exercises: [...routine.exercises, { ...blankExercise }] });
+  };
+  return <div className="focus-session routine-editor">
+    <header className="session-heading"><div><p className="eyebrow">HOME / ROUTINES / EDIT</p><h1>Edit routine</h1></div><div className="workout-header-actions"><button className="session-finish" onClick={()=>setShowIntake(true)}>Generate workout</button>{routine && <button className="session-finish session-start" disabled={!canStart(routine)} onClick={()=>startWorkout(routine)}>Start workout</button>}</div></header>
+    {loading ? <p className="empty-card" role="status">Loading your routine…</p> : routine ? <>
+      <section className="session-overview editor-overview" aria-label="Routine overview"><div><span>Exercises</span><strong>{routine.exercises.length}</strong></div><div><span>Working sets</span><strong>{totalSets}</strong></div><div><span>Editing exercise</span><strong>{exercise ? index+1 : '—'}<small> / {routine.exercises.length}</small></strong></div><div><span>Routine actions</span><button className="editor-text-action" onClick={buildRoutine}>Build a new routine</button></div></section>
+      {!canStart(routine) && <p className="session-warning">Add at least one exercise and give each exercise a different name before starting.</p>}
+      <div className="session-workspace">
+        <div className="current-workspace">
+          <section className="exercise-stage editor-routine-details" aria-label="Routine details"><div className="stage-copy"><p className="eyebrow">THIS WORKOUT TODAY</p><label className="editor-title-label"><span className="sr-only">Routine name</span><textarea rows={1} value={routine.title} onChange={e=>editRoutine({...routine,title:e.target.value})} className="hero-title editable-routine-title editor-routine-title"/></label><label className="editor-description-label"><span className="sr-only">Routine description</span><textarea rows={2} value={routine.description} placeholder="Add a short description" onChange={e=>editRoutine({...routine,description:e.target.value})}/></label><div className="stage-tags"><span>{routine.exercises.length} exercises</span><span>{totalSets} working sets</span></div></div></section>
+          {exercise ? <section className="set-logger editor-exercise" aria-labelledby="editor-exercise-heading">
+            <div className="logger-heading"><div><p className="eyebrow">EXERCISE {String(index+1).padStart(2,'0')} / {String(routine.exercises.length).padStart(2,'0')}</p><h2 id="editor-exercise-heading">Edit exercise</h2></div><div className="editor-exercise-actions">{exercise.name.trim() && <button className="swap-button" onClick={()=>setSwapIndex(index)}>Swap</button>}<button className="remove-button" onClick={()=>{removeExercise(index);setSelection(Math.max(0,index-1));}} aria-label={`Remove exercise ${index+1}`}>Remove</button></div></div>
+            <ExercisePicker key={index} label={`Exercise ${index+1} name`} value={exercise.name} onChange={name=>handleExerciseChange(index,'name',name)} exclude={routine.exercises.filter((_,i)=>i!==index).map(item=>item.name)}/>
+            <div className="editor-fields"><label>Sets<input aria-label={`Exercise ${index+1} sets`} type="number" min="1" value={exercise.sets} onChange={e=>handleExerciseChange(index,'sets',Math.max(1,parseInt(e.target.value)||1))}/></label><label>Reps<input aria-label={`Exercise ${index+1} reps`} type="text" value={exercise.reps} onChange={e=>handleExerciseChange(index,'reps',e.target.value)}/></label><label>Rest (sec)<input aria-label={`Exercise ${index+1} rest in seconds`} type="number" min="0" value={exercise.rest_seconds} onChange={e=>handleExerciseChange(index,'rest_seconds',Math.max(0,parseInt(e.target.value)||0))}/></label></div>
+            {exercise.notes && <p className="stage-note">{exercise.notes}</p>}
+            {lastSets[exercise.name] && <p className="previous-sets">Last time: {lastSets[exercise.name].map(formatSet).join(', ')}</p>}
+            <TargetLine target={nextTarget(lastSets[exercise.name],exercise.reps)}/>
+            <div className="session-bottom-actions"><button className="next-exercise" disabled={index===0} onClick={()=>setSelection(index-1)}>Previous</button>{index<routine.exercises.length-1 ? <button className="next-exercise" onClick={()=>setSelection(index+1)}>Next exercise</button> : <button className="session-primary" onClick={addExercise}>Add exercise</button>}</div>
+          </section> : <div className="set-logger"><h2>Add your first exercise</h2><button className="session-primary mt-4" onClick={addExercise}>Add exercise</button></div>}
+          {isStored(routine) && <button className="editor-delete" onClick={()=>handleDeleteRoutine(routine)}>Delete routine</button>}
+        </div>
+        <aside className="exercise-queue" aria-labelledby="editor-queue-heading"><div className="queue-heading"><h2 id="editor-queue-heading">Workout plan</h2><span>{routine.exercises.length} exercises</span></div><ol>{routine.exercises.map((item,i)=><li key={i}><button aria-current={i===index?'step':undefined} onClick={()=>setSelection(i)}><span className="queue-marker">{String(i+1).padStart(2,'0')}</span><span className="queue-details"><strong>{item.name||'New exercise'}</strong><small>{item.sets} × {item.reps} · {item.rest_seconds}s rest</small><span>{i===index?'Editing':'Select to edit'}</span></span></button></li>)}</ol><button className="editor-add-exercise" onClick={addExercise}>+ Add exercise</button></aside>
+      </div>
+    </> : <div className="empty-card"><h2>No routine selected</h2><p>Open one from My routines, or build your own.</p><button className="session-primary mt-4" onClick={buildRoutine}>Build a routine</button></div>}
+  </div>;
 }
