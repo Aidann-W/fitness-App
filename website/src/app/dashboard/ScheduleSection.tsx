@@ -22,6 +22,8 @@ import {
 import { readJson, writeJson } from '@/lib/storage';
 import AvailabilityCalendar from './AvailabilityCalendar';
 import CalendarProviders from './CalendarProviders';
+import ClockRangePicker from './ClockRangePicker';
+import { sessionRangeDates, type ClockSelection } from '@/lib/clockRange';
 import './ScheduleSection.css';
 
 const PREFS_KEY = 'cumulusfit.schedulePrefs';
@@ -254,19 +256,10 @@ export default function ScheduleSection() {
     });
   };
 
-  const changeTime = (session: GymSession, field: 'start' | 'end', clock: string) => {
-    if (!clock) return;
-    const day = dateKey(new Date(session.starts_at));
-    const startsAt = new Date(session.starts_at);
-    const endsAt = new Date(session.ends_at);
-    const length = endsAt.getTime() - startsAt.getTime();
-
-    // Moving the start keeps the session length. The end must stay after the start.
-    const nextStart = field === 'start' ? localDate(day, clock) : startsAt;
-    const nextEnd = field === 'start' ? new Date(nextStart.getTime() + length) : localDate(day, clock);
-    if (nextEnd <= nextStart) return;
-
-    save({ ...session, starts_at: nextStart.toISOString(), ends_at: nextEnd.toISOString() }, session);
+  const changeTimeRange = async (session: GymSession, range: ClockSelection) => {
+    const dates = sessionRangeDates(dateKey(new Date(session.starts_at)), range);
+    if (!dates) throw new Error('That time is not available on this date. Try another start or finish time.');
+    return save({ ...session, starts_at: dates.start.toISOString(), ends_at: dates.end.toISOString() }, session);
   };
 
   const removeSession = async (session: GymSession) => {
@@ -302,7 +295,7 @@ export default function ScheduleSection() {
           {busyToday.length === 0 && daySessions.length === 0 && dayDrafts.length === 0 && <div className="agenda-empty"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="8" y="10" width="32" height="30" rx="8"/><path d="M8 20h32M17 6v8M31 6v8m-13 16 4 4 8-9" strokeLinecap="round" strokeLinejoin="round"/></svg><h4>A little room in your day.</h4><p>Add a session or pick your available dates to plan the week.</p></div>}
           <ul className="agenda-events" aria-label={key + ' schedule'}>
             {busyToday.map((block, index) => <li key={'busy-'+index} className="agenda-event busy-event"><div className="event-time"><strong>{timeLabel(localDate(key, block.start))}</strong><span>{timeLabel(localDate(key, block.end))}</span></div><div className="event-content"><span className="event-kind">Imported calendar</span><h4>Busy</h4><p>Time reserved for another commitment.</p></div></li>)}
-            {daySessions.map(session => <li key={session.id} className="agenda-event gym-event"><div className="event-time"><strong>{timeLabel(new Date(session.starts_at))}</strong><span>{timeLabel(new Date(session.ends_at))}</span></div><div className="event-content"><span className="event-kind">{session.source === 'ai' ? 'Planned session' : 'Gym session'}</span><h4>{session.title}</h4><div className="session-time-fields"><label><span>Start</span><input type="time" disabled={planning} aria-label={key + ' session start'} value={clockOf(new Date(session.starts_at))} onChange={event => changeTime(session, 'start', event.target.value)}/></label><label><span>End</span><input type="time" disabled={planning} aria-label={key + ' session end'} value={clockOf(new Date(session.ends_at))} onChange={event => changeTime(session, 'end', event.target.value)}/></label></div><div className="event-actions"><a href={googleCalendarLink(session)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a><button className="schedule-remove" disabled={planning} onClick={() => removeSession(session)} aria-label={'Remove ' + key + ' session'}>Remove</button></div></div></li>)}
+            {daySessions.map(session => <li key={session.id} className="agenda-event gym-event"><div className="event-time"><strong>{timeLabel(new Date(session.starts_at))}</strong><span>{timeLabel(new Date(session.ends_at))}</span></div><div className="event-content"><span className="event-kind">{session.source === 'ai' ? 'Planned session' : 'Gym session'}</span><h4>{session.title}</h4><ClockRangePicker start={clockOf(new Date(session.starts_at))} end={clockOf(new Date(session.ends_at))} nextDay={dateKey(new Date(session.ends_at)) !== dateKey(new Date(session.starts_at))} disabled={planning} label={'Edit ' + key + ' session time'} onSave={range => changeTimeRange(session, range)}/><div className="event-actions"><a href={googleCalendarLink(session)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a><button className="schedule-remove" disabled={planning} onClick={() => removeSession(session)} aria-label={'Remove ' + key + ' session'}>Remove</button></div></div></li>)}
             {dayDrafts.map(slot => <li key={'draft-'+slot.date} className="agenda-event suggested-event"><div className="event-time"><strong>{timeLabel(localDate(slot.date, slot.start))}</strong><span>{timeLabel(localDate(slot.date, slot.end))}</span></div><div className="event-content"><span className="event-kind">Suggested workout</span><h4>A time for you</h4><p>{slot.reason}</p>{slot.from === 'planner' && <small>Found by the built-in planner</small>}</div></li>)}
           </ul>
         </div>;

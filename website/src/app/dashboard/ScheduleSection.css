@@ -58,9 +58,6 @@
 .busy-event .event-content { background: #f6f7fa; border-color: #e0e5ed; }
 .busy-event .event-content h4 { color: #687c94; }
 .suggested-event .event-content { border-style: dashed; background: #eaf3ff; }
-.session-time-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
-.session-time-fields label > span { font-size: 10px; color: #68809d; }
-.session-time-fields input { display: block; width: 100%; min-width: 0; min-height: 44px; font-size: 12px; padding: 5px 9px; margin-top: 4px; border: 1px solid #a4b6ce; border-radius: 10px; background: #fff; }
 .event-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .event-actions > a, .event-actions > button { display: inline-flex; align-items: center; min-height: 44px; font-size: 11px; }
 .event-actions > a { text-decoration: underline; text-underline-offset: 3px; color: #446d9c; }
