@@ -1,0 +1,14 @@
+.profile-controls { display:flex; gap:8px; align-items:center; }
+.profile-icon { width:44px; height:44px; min-height:44px; display:grid; place-items:center; border:1px solid #d6e2f1; border-radius:50%; background:#f3f7fd; color:#5d7ca1; cursor:pointer; list-style:none; }
+.profile-icon::-webkit-details-marker { display:none; }
+.profile-icon svg { width:20px; height:20px; }
+.profile-icon:disabled { opacity:.5; cursor:wait; }
+.profile-details { position:relative; }
+.profile-details[open] > summary { background:#dce9f9; }
+.profile-icon:focus-visible { outline:2px solid #426b9e; outline-offset:4px; }
+.profile-popover { position:absolute; z-index:30; right:0; top:54px; width:260px; padding:20px; border:1px solid transparent; border-radius:20px; background:#fff; box-shadow:var(--surface-shadow); overscroll-behavior:contain; }
+.profile-popover strong { font-size:14px; font-weight:600; color:#385573; }
+.profile-popover p { font-size:12px; color:#607c9d; margin:10px 0; overflow-wrap:anywhere; }
+.profile-popover small { font-size:11px; line-height:1.7; color:#8799b0; }
+@media(min-width:1101px) { .profile-controls { margin-top:auto; } .profile-popover { left:0; right:auto; top:auto; bottom:54px; } }
+@media(hover:hover) { .profile-icon:hover { background:#e0ebf9; } }

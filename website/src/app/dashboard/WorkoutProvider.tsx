@@ -10,6 +10,7 @@ import { BUSY_KEY } from '@/lib/schedule';
 import { readJson, writeJson } from '@/lib/storage';
 import type { ActiveSession, Exercise, LoggedSet, RoutineAnswers, WorkoutRoutine, } from '@/lib/types';
 import AccountModal from './AccountModal';
+import ProfileControls from './ProfileControls';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 const ROUTINES_KEY = 'cumulusfit.routines';
@@ -286,9 +287,7 @@ export default function WorkoutProvider({ children }: {
             <nav className="cloud-nav" aria-label="Main navigation">
               {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>{label}</Link>)}
             </nav>
-            <div className="account-actions flex items-center gap-2">
-              {account && (account.isAnonymous ? (<button onClick={() => setShowAccount(true)} className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]">Save your progress</button>) : <><span className="account-email text-sm text-slate-500">{account.email}</span><button onClick={handleLogOut} className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]">Log out</button></>)}
-            </div>
+            <ProfileControls account={account} onSignIn={() => setShowAccount(true)} onLogOut={handleLogOut} />
           </div>
         </header>
         <main id="page-content" className="mx-auto w-full max-w-6xl flex-1 space-y-7 px-5 py-8 sm:px-8" tabIndex={-1}>
