@@ -20,7 +20,7 @@ export default function DashboardView() {
   const layer = cloudLayer(volume);
   const ready = !loading && today !== null;
   return <div className="simple-dashboard">
-    <div className="simple-heading"><div><p className="eyebrow">HOME / DASHBOARD</p><h1>Workouts</h1></div><button className="dashboard-add" onClick={() => setShowIntake(true)}>Generate a workout</button></div>
+    <div className="simple-heading"><div><p className="eyebrow">HOME / DASHBOARD</p><h1>Dashboard</h1></div><button className="dashboard-add" onClick={() => setShowIntake(true)}>Generate a workout</button></div>
     <div className="simple-grid">
       <Link href="/training" className="simple-tile workout-tile"><div className="workout-tile-top"><span className="workout-round" aria-hidden="true">{routine?.exercises.length ?? '—'}</span><span className="tile-kicker">{session ? 'IN PROGRESS' : 'NEXT WORKOUT'}</span></div><h2>{routine?.title ?? (loading ? 'Loading…' : 'Your first workout')}</h2><p>{session ? 'Continue your session' : routine ? routine.exercises.length+' exercises · Open workout' : 'Choose a routine to get started'}</p></Link>
       <Link href="/activity" className="simple-tile sessions-tile"><p className="tile-kicker">LAST 7 DAYS</p><strong className="tile-number">{ready ? recentSessions : '—'}<small>sessions</small></strong><div><h2>Training activity</h2><p>{ready ? recentLogs.length+' sets logged' : 'Loading activity…'}</p></div></Link>
