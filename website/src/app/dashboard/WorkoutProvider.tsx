@@ -11,6 +11,7 @@ import { readJson, writeJson } from '@/lib/storage';
 import type { ActiveSession, Exercise, LoggedSet, RoutineAnswers, WorkoutRoutine, } from '@/lib/types';
 import AccountModal from './AccountModal';
 import ProfileControls from './ProfileControls';
+import DashboardSky from './DashboardSky';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 const ROUTINES_KEY = 'cumulusfit.routines';
@@ -298,7 +299,8 @@ export default function WorkoutProvider({ children }: {
     const pathname = usePathname();
     const { account, session, notice, showIntake, showAccount, swapIndex, swapRoutine, setShowAccount, setShowIntake, setSwapIndex, handleLogOut, handleGenerate, handleSwap, reloadAfterAccountChange } = state;
     return (<WorkoutContext.Provider value={state}>
-      <div className="cloud-app min-h-screen font-sans text-slate-800">
+      <div className={'cloud-app min-h-screen font-sans text-slate-800' + (pathname === '/dashboard' ? ' dashboard-sky-page' : '')}>
+        <DashboardSky active={pathname === '/dashboard'} />
         <a href="#page-content" className="skip-link">Skip to content</a>
         <header className="cloud-header">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">

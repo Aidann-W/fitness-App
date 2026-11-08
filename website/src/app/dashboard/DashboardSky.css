@@ -1,0 +1,26 @@
+/* Reuses the workout hero artwork without moving the Dashboard's data. */
+.cloud-app.dashboard-sky-page {
+  position: relative;
+  isolation: isolate;
+  background: #dce7f6;
+}
+.dashboard-sky {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.dashboard-sky-art {
+  position: absolute;
+  inset: -12px 0;
+  background: linear-gradient(90deg, rgba(227,237,249,.94), rgba(221,233,248,.6) 50%, transparent), url('/cloudscape.svg') center / cover;
+}
+.dashboard-sky-page .simple-heading .eyebrow { color: #395b80; }
+.dashboard-sky-page .cloud-footer { color: #405f82; border-top-color: #adbfda; }
+@media (max-width: 700px) {
+  .dashboard-sky-art { background-position: 68% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-sky-art { transform: none !important; }
+}
