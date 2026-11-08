@@ -1,0 +1,49 @@
+.heatmap-trigger { width:100%; text-align:left; cursor:pointer; justify-content:space-between; gap:16px; }
+.heatmap-trigger:disabled { cursor:wait; opacity:.65; }
+.heatmap-title,.consistency-detail-header { display:flex; align-items:center; gap:12px; }
+.heatmap-title h2 { font-size:17px; }
+.heatmap-title p { margin:3px 0 0; font-size:11px; }
+.sport-icon { display:grid; place-items:center; width:38px; height:38px; border-radius:13px; background:#e1ebfa; color:#6b8bbb; font-size:24px; flex-shrink:0; }
+.heatmap-expand { margin-left:auto; color:#7897bb; font-size:23px; }
+.consistency-map { width:100%; }
+.heatmap-squares { display:grid; grid-template-rows:repeat(7,minmax(0,1fr)); grid-auto-flow:column; grid-template-columns:repeat(26,minmax(0,1fr)); gap:4px; }
+.heat-cell { aspect-ratio:1; border-radius:3px; background:#e9eef6; }
+.level-0 { background:#edf1f7; }
+.level-1 { background:#d5e2f5; }
+.level-2 { background:#acc6e8; }
+.level-3 { background:#7c9fcf; }
+.level-4 { background:#4d77b0; }
+.heat-cell.future-cell { opacity:.35; }
+.heatmap-badges { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.heatmap-badges > span { padding:6px 9px; border-radius:9px; background:#edf3fc; font-size:10px; color:#6b86a9; }
+.consistency-dialog { margin:auto; padding:26px; width:min(540px,calc(100% - 28px)); max-height:calc(100dvh - 40px); overflow-y:auto; overscroll-behavior:contain; background:#fff; color:#355171; border:1px solid #d7e3f2; border-radius:30px; box-shadow:0 20px 100px #1b365940; transform-origin:top left; }
+.consistency-dialog::backdrop { background:#20375355; }
+.consistency-detail-header { margin-bottom:26px; }
+.consistency-detail-header h2 { font-size:20px; font-weight:600; letter-spacing:-.4px; }
+.consistency-detail-header p { font-size:11px; color:#8395a9; margin-top:4px; }
+.consistency-close { margin-left:auto; flex-shrink:0; border-radius:50%; width:44px; height:44px; font-size:24px; color:#718caa; background:#f0f5fb; }
+.heatmap-months { display:grid; grid-template-columns:repeat(26,minmax(0,1fr)); margin-bottom:9px; font-size:9px; color:#94a5ba; }
+.consistency-dialog .heatmap-badges { margin-top:16px; padding-bottom:22px; border-bottom:1px solid #e8eef6; }
+.heatmap-badges .heatmap-legend { display:flex; align-items:center; gap:4px; margin-left:auto; padding:0; background:transparent; font-size:9px; }
+.heatmap-legend i { width:8px; height:8px; border-radius:2px; }
+.calendar-toolbar { display:flex; align-items:center; justify-content:space-between; margin:20px 0 16px; }
+.calendar-toolbar h3 { font-size:15px; font-weight:550; }
+.calendar-toolbar > div { display:flex; gap:7px; }
+.calendar-toolbar button { height:38px; width:38px; border-radius:12px; background:#f1f5fb; color:#6c89ab; font-size:24px; }
+.calendar-toolbar button:disabled { opacity:.3; cursor:not-allowed; }
+.calendar-weekdays,.calendar-dates { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.calendar-weekdays { margin-bottom:10px; text-align:center; font-size:10px; color:#8b9eb4; }
+.calendar-date { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:48px; border:1px solid transparent; border-radius:12px; color:#557599; }
+.calendar-date strong { font-size:13px; font-weight:500; }
+.calendar-date span { height:6px; font-size:11px; line-height:6px; }
+.calendar-date.level-4 { color:#fff; }
+.calendar-date[aria-pressed="true"] { border-color:#4c77b1; outline:1px solid #4c77b1; outline-offset:1px; }
+.calendar-date:disabled { opacity:.3; cursor:not-allowed; }
+.consistency-day-detail { border-top:1px solid #e8eef6; padding-top:18px; margin-top:20px; }
+.consistency-day-detail h3 { font-size:13px; font-weight:550; }
+.consistency-day-detail > p { font-size:11px; line-height:1.8; color:#8a9aaf; margin-top:8px; }
+.consistency-day-detail ul { list-style:none; padding:0; margin-top:8px; max-height:160px; overflow-y:auto; overscroll-behavior:contain; }
+.consistency-day-detail li { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #eef2f8; font-size:11px; }
+.consistency-day-detail li strong { flex-shrink:0; font-weight:500; color:#6b89ab; }
+@media(hover:hover) { .heatmap-trigger:not(:disabled):hover { background:#f8faff; box-shadow:0 0 0 1px #cbdcf0,0 6px 20px -12px #35567520; } .calendar-date:not(:disabled):hover { border-color:#9eb6d6; } .consistency-close:hover { background:#e0ebf9; } }
+@media(max-width:700px) { .heatmap-trigger { min-height:210px; } .heatmap-squares { gap:3px; } .heat-cell { border-radius:2px; } .consistency-dialog { padding:20px; border-radius:26px; max-height:calc(100dvh - 24px); } .consistency-detail-header h2 { font-size:18px; } .heatmap-badges .heatmap-legend { margin-left:0; } .calendar-date { height:44px; } }
