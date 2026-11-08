@@ -20,6 +20,7 @@ export interface RoutineAnswers {
   equipment: string[];
   minutes: number;
   focus: string;
+  preferredExercises?: string[];
 }
 
 export interface SetEntry {
