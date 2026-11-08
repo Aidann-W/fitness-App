@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { cloudLayer } from '@/lib/altitude';
-import { poundsLiftedSince, progressFor, weightedExercises, type ProgressPoint } from '@/lib/history';
+import { progressFor, weightedExercises, type ProgressPoint } from '@/lib/history';
 import type { LoggedSet } from '@/lib/types';
 
 // Validated with the dataviz palette checker against the white card surface.
 const LINE_COLOR = '#3a72b0';
-const TRACK_COLOR = '#dce7f4';
 const GRID_COLOR = '#e6ecf2';
 
 const CHART_HEIGHT = 200;
@@ -28,44 +26,6 @@ function niceTicks(min: number, max: number): number[] {
   const ticks: number[] = [];
   for (let v = Math.max(0, start); v <= end + step / 2; v += step) ticks.push(Math.round(v * 10) / 10);
   return ticks;
-}
-
-function AltitudeCard({ logs }: { logs: LoggedSet[] }) {
-  // Set after mount: the page is prerendered, so "now" must come from the browser.
-  const [since, setSince] = useState<Date | null>(null);
-  useEffect(() => setSince(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)), []);
-  if (!since) return null;
-
-  const pounds = poundsLiftedSince(logs, since);
-  const layer = cloudLayer(pounds);
-
-  return (
-    <div className="rounded-[24px] border border-[#d5e0e8] bg-white p-5">
-      <p className="text-sm text-slate-500">Lifted in the last 7 days</p>
-      <p className="mt-1 text-3xl font-semibold text-slate-900">{formatPounds(pounds)} lb</p>
-      <p className="mt-2 text-sm text-slate-600">
-        At a foot per pound, that&apos;s {layer.next ? `${layer.name} height` : 'above the clouds'}.
-      </p>
-      {layer.next && (
-        <>
-          <div
-            role="meter"
-            aria-label={`Progress to ${layer.next.name} height`}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(layer.progress * 100)}
-            className="mt-3 h-2 overflow-hidden rounded-full"
-            style={{ background: TRACK_COLOR }}
-          >
-            <div className="h-full rounded-full" style={{ width: `${layer.progress * 100}%`, background: LINE_COLOR }} />
-          </div>
-          <p className="mt-1 text-xs text-slate-500">
-            {formatPounds(layer.next.from - pounds)} lb to {layer.next.name}
-          </p>
-        </>
-      )}
-    </div>
-  );
 }
 
 function ProgressChart({ points, exercise }: { points: ProgressPoint[]; exercise: string }) {
@@ -193,7 +153,6 @@ export default function ProgressPanel({ logs }: { logs: LoggedSet[] }) {
 
   return (
     <div className="progress-layout">
-      <AltitudeCard logs={logs} />
 
       {!exercise && <div className="panel progress-empty"><h3>Strength progress</h3><p>Log a weighted exercise to start your chart.</p><div className="chart-placeholder" aria-hidden="true"><span/><span/><span/><span/></div><small>No lifting data yet</small></div>}
       {exercise && (
