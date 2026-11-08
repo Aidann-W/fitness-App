@@ -152,7 +152,7 @@ export default function WorkoutSession({ session, lastSets, onChange, onFinish, 
   const started = current && Array.from({ length: current.sets }, (_, i) => entryFor(current, i).done).some(Boolean);
 
   return <div className="workout-session focus-session">
-    <header className="session-heading"><div><p className="eyebrow">WORKOUT IN PROGRESS</p><h2>{session.routine.title}</h2></div><button className="session-finish" onClick={handleFinish} disabled={unsavedSets.length > 0}>Finish workout</button></header>
+    <header className="session-heading"><div><p className="eyebrow">WORKOUT IN PROGRESS</p><h1>{session.routine.title}</h1></div><button className="session-finish" onClick={handleFinish} disabled={unsavedSets.length > 0}>Finish workout</button></header>
     <div className="session-overview" aria-label="Session overview"><div><span>Exercises</span><strong>{exercises.length}</strong></div><div><span>Working sets</span><strong>{totalSets}</strong></div><div><span>Completed</span><strong>{completedSets}<small> / {totalSets}</small></strong></div><div className="session-progress"><span>{progress}% complete</span><div role="progressbar" aria-label="Workout completion" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><div style={{width: progress+'%'}}/></div></div></div>
     {unsavedSets.length > 0 && <div role="status" className="session-warning"><span>{unsavedSets.length} set(s) waiting to sync. Kept on this device.</span><button onClick={retryUnsaved}>Retry saving</button></div>}
     {error && <p role="alert" className="session-error">{error}</p>}

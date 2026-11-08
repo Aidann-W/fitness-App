@@ -27,6 +27,8 @@ export const canStart = (routine: WorkoutRoutine) => {
 // Presets and unsaved routines have no row in Supabase to update.
 export const isStored = (routine: WorkoutRoutine) => Boolean(routine.id) && !starterPresets.some((preset) => preset.id === routine.id);
 function useWorkoutState() {
+    const pathname = usePathname();
+    const editingRoutine = pathname.startsWith('/routines');
     const router = useRouter();
     const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
     const [loading, setLoading] = useState(true);
@@ -95,11 +97,11 @@ function useWorkoutState() {
     }, [selectedRoutine]);
     const openRoutine = (routine: WorkoutRoutine) => {
         setSelectedRoutine(routine);
-        router.push('/training');
+        router.push('/routines/edit');
     };
     const buildRoutine = () => {
         editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] });
-        router.push('/training');
+        router.push('/routines/edit');
     };
     // Autosave once typing pauses.
     useEffect(() => {
@@ -199,10 +201,11 @@ function useWorkoutState() {
             : 0;
         writeJson(SESSION_KEY, null);
         setSession(null);
+        router.replace('/activity');
         setNotice(`Workout finished. ${setCount} set(s) saved.`);
         await loadLogs();
     };
-    const swapRoutine = session?.routine ?? selectedRoutine;
+    const swapRoutine = session && !editingRoutine ? session.routine : selectedRoutine;
     const handleSwap = async (reason: string) => {
         if (!swapRoutine || swapIndex === null)
             return;
@@ -213,7 +216,7 @@ function useWorkoutState() {
         const exercises = [...swapRoutine.exercises];
         exercises[swapIndex] = replacement;
         const updated = { ...swapRoutine, exercises };
-        if (session) {
+        if (session && !editingRoutine) {
             updateSession((prev) => ({ ...prev, routine: updated }));
         }
         else {
@@ -236,7 +239,7 @@ function useWorkoutState() {
             setNotice('Your workout was generated but not saved. It will be lost if you refresh.');
         }
         setShowIntake(false);
-        router.push('/training');
+        router.push('/routines/edit');
     };
     const handleExerciseChange = <K extends keyof Exercise>(index: number, field: K, value: Exercise[K]) => {
         if (!selectedRoutine)
@@ -285,7 +288,7 @@ export default function WorkoutProvider({ children }: {
               <span>Cumulus<span className="brand-fit">Fit</span><small>Your strength, one session at a time.</small></span>
             </Link>
             <nav className="cloud-nav" aria-label="Main navigation">
-              {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>{label}</Link>)}
+              {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={(pathname === href || pathname.startsWith(href + '/')) ? 'page' : undefined}>{label}</Link>)}
             </nav>
             <ProfileControls account={account} onSignIn={() => setShowAccount(true)} onLogOut={handleLogOut} />
           </div>
