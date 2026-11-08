@@ -37,6 +37,7 @@ export interface ActiveSession {
   routine: WorkoutRoutine;
   sets: Record<string, SetEntry>;
   restEndsAt: number | null;
+  startedAt?: number | null;
 }
 
 export interface SetLog {

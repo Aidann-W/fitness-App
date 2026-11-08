@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Type } from '@google/genai';
 import { exerciseSchema, generateWithFallback } from '@/lib/gemini';
+import { friendlyWorkoutName } from '@/lib/workoutName';
 import { isSignedIn } from '@/lib/supabase';
 
 const routineSchema = {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
         systemInstruction:
           'You are a strength coach for beginner and intermediate gym users. ' +
           'Only use equipment the user has. Fit the routine to their time limit. ' +
-          'Keep notes to one short sentence. ' +
+          'Keep notes to one short sentence. Use a short everyday workout title such as Full Body Workout or Upper Body Strength. Do not use hypertrophy, experience-level prefixes, or technical jargon in the title. ' +
           'Do not give medical, injury, or rehabilitation advice.',
       }
     );
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
       throw new Error('Gemini returned a routine with no exercises');
     }
 
+    routine.title = friendlyWorkoutName(typeof routine.title === 'string' ? routine.title : '');
     return NextResponse.json(routine);
   } catch (error) {
     console.error('Gemini API Error:', error);

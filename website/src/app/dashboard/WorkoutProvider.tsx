@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAccount, logOut, type Account } from '@/lib/account';
@@ -36,6 +36,7 @@ function useWorkoutState() {
     const [showIntake, setShowIntake] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
     const [session, setSession] = useState<ActiveSession | null>(null);
+    const sessionRef = useRef<ActiveSession | null>(null);
     const [swapIndex, setSwapIndex] = useState<number | null>(null);
     const [logs, setLogs] = useState<LoggedSet[]>([]);
     const [pendingSave, setPendingSave] = useState<WorkoutRoutine | null>(null);
@@ -86,7 +87,8 @@ function useWorkoutState() {
                 setLoading(false);
             }
         }
-        setSession(readJson<ActiveSession>(SESSION_KEY));
+        sessionRef.current = readJson<ActiveSession>(SESSION_KEY);
+        setSession(sessionRef.current);
         // Routines load first because that is what starts the anonymous session.
         loadRoutines().then(() => getAccount()).then(setAccount);
         loadLogs();
@@ -171,13 +173,12 @@ function useWorkoutState() {
         }
     };
     const updateSession = (update: (prev: ActiveSession) => ActiveSession) => {
-        setSession((prev) => {
-            if (!prev)
-                return prev;
-            const next = update(prev);
-            writeJson(SESSION_KEY, next);
-            return next;
-        });
+        // Ignore an old save response after the user switches or finishes a session.
+        if (!sessionRef.current || sessionRef.current.sessionId !== session?.sessionId) return;
+        const next = update(sessionRef.current);
+        sessionRef.current = next;
+        writeJson(SESSION_KEY, next);
+        setSession(next);
     };
     const startWorkout = (routine: WorkoutRoutine) => {
         if (session) {
@@ -190,15 +191,33 @@ function useWorkoutState() {
             routine,
             sets: {},
             restEndsAt: null,
+            startedAt: null,
         };
+        sessionRef.current = next;
         writeJson(SESSION_KEY, next);
         setSession(next);
         router.push('/training');
+    };
+    const switchWorkout = (routine: WorkoutRoutine) => {
+        if (!canStart(routine)) return;
+        if (session && Object.values(session.sets).some(entry => entry.unsaved)) {
+            setNotice('Save your logged sets before switching workouts.');
+            return;
+        }
+        if (session && (session.startedAt != null || Object.keys(session.sets).length > 0) && !window.confirm('Switch workouts? Saved sets stay in Activity. Unfinished entries will not carry over.')) return;
+        const next: ActiveSession = { sessionId: crypto.randomUUID(), routineId: isStored(routine) ? routine.id! : null, routine, sets: {}, restEndsAt: null, startedAt: null };
+        sessionRef.current = next;
+        writeJson(SESSION_KEY, next);
+        setSession(next);
+        setSelectedRoutine(routine);
+        setNotice(null);
+        loadLogs();
     };
     const finishWorkout = async () => {
         const setCount = session
             ? Object.values(session.sets).filter((entry) => entry.done).length
             : 0;
+        sessionRef.current = null;
         writeJson(SESSION_KEY, null);
         setSession(null);
         router.replace('/activity');
@@ -259,7 +278,7 @@ function useWorkoutState() {
     return { routines, loading, selectedRoutine, session, logs, lastSets, recentWorkouts, account,
         notice, showIntake, showAccount, swapIndex, swapRoutine, setShowIntake, setShowAccount, setSwapIndex,
         editRoutine, openRoutine, buildRoutine, handleDeleteRoutine, handleLogOut, reloadAfterAccountChange,
-        updateSession, startWorkout, finishWorkout, handleSwap, handleGenerate, handleExerciseChange, removeExercise };
+        updateSession, startWorkout, switchWorkout, finishWorkout, handleSwap, handleGenerate, handleExerciseChange, removeExercise };
 }
 const WorkoutContext = createContext<ReturnType<typeof useWorkoutState> | null>(null);
 export function useWorkouts() {
