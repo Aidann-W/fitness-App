@@ -20,6 +20,7 @@ export interface RoutineAnswers {
   equipment: string[];
   minutes: number;
   focus: string;
+  preferredExercises?: string[];
 }
 
 export interface SetEntry {
@@ -37,6 +38,7 @@ export interface ActiveSession {
   routine: WorkoutRoutine;
   sets: Record<string, SetEntry>;
   restEndsAt: number | null;
+  startedAt?: number | null;
 }
 
 export interface SetLog {

@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAccount, logOut, type Account } from '@/lib/account';
@@ -10,6 +10,8 @@ import { BUSY_KEY } from '@/lib/schedule';
 import { readJson, writeJson } from '@/lib/storage';
 import type { ActiveSession, Exercise, LoggedSet, RoutineAnswers, WorkoutRoutine, } from '@/lib/types';
 import AccountModal from './AccountModal';
+import ProfileControls from './ProfileControls';
+import DashboardSky from './DashboardSky';
 import IntakeModal from './IntakeModal';
 import SwapModal from './SwapModal';
 const ROUTINES_KEY = 'cumulusfit.routines';
@@ -26,6 +28,8 @@ export const canStart = (routine: WorkoutRoutine) => {
 // Presets and unsaved routines have no row in Supabase to update.
 export const isStored = (routine: WorkoutRoutine) => Boolean(routine.id) && !starterPresets.some((preset) => preset.id === routine.id);
 function useWorkoutState() {
+    const pathname = usePathname();
+    const editingRoutine = pathname.startsWith('/routines');
     const router = useRouter();
     const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
     const [loading, setLoading] = useState(true);
@@ -33,6 +37,7 @@ function useWorkoutState() {
     const [showIntake, setShowIntake] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
     const [session, setSession] = useState<ActiveSession | null>(null);
+    const sessionRef = useRef<ActiveSession | null>(null);
     const [swapIndex, setSwapIndex] = useState<number | null>(null);
     const [logs, setLogs] = useState<LoggedSet[]>([]);
     const [pendingSave, setPendingSave] = useState<WorkoutRoutine | null>(null);
@@ -83,7 +88,8 @@ function useWorkoutState() {
                 setLoading(false);
             }
         }
-        setSession(readJson<ActiveSession>(SESSION_KEY));
+        sessionRef.current = readJson<ActiveSession>(SESSION_KEY);
+        setSession(sessionRef.current);
         // Routines load first because that is what starts the anonymous session.
         loadRoutines().then(() => getAccount()).then(setAccount);
         loadLogs();
@@ -94,11 +100,11 @@ function useWorkoutState() {
     }, [selectedRoutine]);
     const openRoutine = (routine: WorkoutRoutine) => {
         setSelectedRoutine(routine);
-        router.push('/training');
+        router.push('/routines/edit');
     };
     const buildRoutine = () => {
         editRoutine({ title: 'My Workout', description: '', exercises: [blankExercise] });
-        router.push('/training');
+        router.push('/routines/edit');
     };
     // Autosave once typing pauses.
     useEffect(() => {
@@ -168,13 +174,12 @@ function useWorkoutState() {
         }
     };
     const updateSession = (update: (prev: ActiveSession) => ActiveSession) => {
-        setSession((prev) => {
-            if (!prev)
-                return prev;
-            const next = update(prev);
-            writeJson(SESSION_KEY, next);
-            return next;
-        });
+        // Ignore an old save response after the user switches or finishes a session.
+        if (!sessionRef.current || sessionRef.current.sessionId !== session?.sessionId) return;
+        const next = update(sessionRef.current);
+        sessionRef.current = next;
+        writeJson(SESSION_KEY, next);
+        setSession(next);
     };
     const startWorkout = (routine: WorkoutRoutine) => {
         if (session) {
@@ -187,21 +192,40 @@ function useWorkoutState() {
             routine,
             sets: {},
             restEndsAt: null,
+            startedAt: null,
         };
+        sessionRef.current = next;
         writeJson(SESSION_KEY, next);
         setSession(next);
         router.push('/training');
+    };
+    const switchWorkout = (routine: WorkoutRoutine) => {
+        if (!canStart(routine)) return;
+        if (session && Object.values(session.sets).some(entry => entry.unsaved)) {
+            setNotice('Save your logged sets before switching workouts.');
+            return;
+        }
+        if (session && (session.startedAt != null || Object.keys(session.sets).length > 0) && !window.confirm('Switch workouts? Saved sets stay in Activity. Unfinished entries will not carry over.')) return;
+        const next: ActiveSession = { sessionId: crypto.randomUUID(), routineId: isStored(routine) ? routine.id! : null, routine, sets: {}, restEndsAt: null, startedAt: null };
+        sessionRef.current = next;
+        writeJson(SESSION_KEY, next);
+        setSession(next);
+        setSelectedRoutine(routine);
+        setNotice(null);
+        loadLogs();
     };
     const finishWorkout = async () => {
         const setCount = session
             ? Object.values(session.sets).filter((entry) => entry.done).length
             : 0;
+        sessionRef.current = null;
         writeJson(SESSION_KEY, null);
         setSession(null);
+        router.replace('/activity');
         setNotice(`Workout finished. ${setCount} set(s) saved.`);
         await loadLogs();
     };
-    const swapRoutine = session?.routine ?? selectedRoutine;
+    const swapRoutine = session && !editingRoutine ? session.routine : selectedRoutine;
     const handleSwap = async (reason: string) => {
         if (!swapRoutine || swapIndex === null)
             return;
@@ -212,7 +236,7 @@ function useWorkoutState() {
         const exercises = [...swapRoutine.exercises];
         exercises[swapIndex] = replacement;
         const updated = { ...swapRoutine, exercises };
-        if (session) {
+        if (session && !editingRoutine) {
             updateSession((prev) => ({ ...prev, routine: updated }));
         }
         else {
@@ -235,7 +259,7 @@ function useWorkoutState() {
             setNotice('Your workout was generated but not saved. It will be lost if you refresh.');
         }
         setShowIntake(false);
-        router.push('/training');
+        router.push('/routines/edit');
     };
     const handleExerciseChange = <K extends keyof Exercise>(index: number, field: K, value: Exercise[K]) => {
         if (!selectedRoutine)
@@ -255,7 +279,7 @@ function useWorkoutState() {
     return { routines, loading, selectedRoutine, session, logs, lastSets, recentWorkouts, account,
         notice, showIntake, showAccount, swapIndex, swapRoutine, setShowIntake, setShowAccount, setSwapIndex,
         editRoutine, openRoutine, buildRoutine, handleDeleteRoutine, handleLogOut, reloadAfterAccountChange,
-        updateSession, startWorkout, finishWorkout, handleSwap, handleGenerate, handleExerciseChange, removeExercise };
+        updateSession, startWorkout, switchWorkout, finishWorkout, handleSwap, handleGenerate, handleExerciseChange, removeExercise };
 }
 const WorkoutContext = createContext<ReturnType<typeof useWorkoutState> | null>(null);
 export function useWorkouts() {
@@ -275,7 +299,8 @@ export default function WorkoutProvider({ children }: {
     const pathname = usePathname();
     const { account, session, notice, showIntake, showAccount, swapIndex, swapRoutine, setShowAccount, setShowIntake, setSwapIndex, handleLogOut, handleGenerate, handleSwap, reloadAfterAccountChange } = state;
     return (<WorkoutContext.Provider value={state}>
-      <div className="cloud-app min-h-screen font-sans text-slate-800">
+      <div className={'cloud-app min-h-screen font-sans text-slate-800' + (pathname === '/dashboard' ? ' dashboard-sky-page' : '')}>
+        <DashboardSky active={pathname === '/dashboard'} />
         <a href="#page-content" className="skip-link">Skip to content</a>
         <header className="cloud-header">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">
@@ -284,11 +309,9 @@ export default function WorkoutProvider({ children }: {
               <span>Cumulus<span className="brand-fit">Fit</span><small>Your strength, one session at a time.</small></span>
             </Link>
             <nav className="cloud-nav" aria-label="Main navigation">
-              {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>{label}</Link>)}
+              {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={(pathname === href || pathname.startsWith(href + '/')) ? 'page' : undefined}>{label}</Link>)}
             </nav>
-            <div className="account-actions flex items-center gap-2">
-              {account && (account.isAnonymous ? (<button onClick={() => setShowAccount(true)} className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]">Save your progress</button>) : <><span className="account-email text-sm text-slate-500">{account.email}</span><button onClick={handleLogOut} className="min-h-11 rounded-full px-4 text-sm font-medium text-[#3d6d8c] hover:bg-[#e7eef3]">Log out</button></>)}
-            </div>
+            <ProfileControls account={account} onSignIn={() => setShowAccount(true)} onLogOut={handleLogOut} />
           </div>
         </header>
         <main id="page-content" className="mx-auto w-full max-w-6xl flex-1 space-y-7 px-5 py-8 sm:px-8" tabIndex={-1}>
@@ -296,7 +319,7 @@ export default function WorkoutProvider({ children }: {
           {session && pathname !== '/training' && pathname !== '/dashboard' && <div className="resume-banner"><div><strong>Workout in progress</strong><p>{session.routine.title}</p></div><Link href="/training" className="button-primary">Resume workout <span aria-hidden="true">↗</span></Link></div>}
           {children}
         </main>
-        <footer className="cloud-footer"><span>CumulusFit</span><p>Your workouts, organized.</p><small>Built at HackRPI 2026</small></footer>
+        <footer className="cloud-footer"><span>CumulusFit</span><small>Built at HackRPI 2026</small></footer>
         {showIntake && <IntakeModal onGenerate={handleGenerate} onClose={() => setShowIntake(false)}/>}
         {showAccount && <AccountModal onSignedIn={reloadAfterAccountChange} onClose={() => setShowAccount(false)}/>}
         {swapIndex !== null && swapRoutine && <SwapModal exercise={swapRoutine.exercises[swapIndex]} onSwap={handleSwap} onClose={() => setSwapIndex(null)}/>}

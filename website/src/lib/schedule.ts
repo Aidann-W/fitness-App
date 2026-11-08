@@ -11,6 +11,8 @@ export interface SchedulePrefs {
   latest: string;
   timeOfDay: TimeOfDay;
   notes: string;
+  // Undefined keeps the legacy behavior: every supplied planning day is eligible.
+  availableDates?: string[];
 }
 
 export interface GymSession {
@@ -146,4 +148,9 @@ export function plannerSlots(
     });
   }
   return added;
+}
+
+// Shared by the UI and API, so Gemini and the fallback see the same selected dates.
+export function availablePlanDays(days: PlanDay[], prefs: SchedulePrefs): PlanDay[] {
+  return prefs.availableDates === undefined ? days : days.filter(day => prefs.availableDates!.includes(day.date));
 }
