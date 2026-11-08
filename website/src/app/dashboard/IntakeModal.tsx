@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { customItems, customizeRoutineAnswers } from '@/lib/routineCustomization';
 import type { RoutineAnswers } from '@/lib/types';
+import WorkoutQuiz from './WorkoutQuiz';
 
 const GOALS = ['Strength', 'Muscle building', 'General fitness'];
 const EXPERIENCE = ['Beginner', 'Intermediate'];
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function IntakeModal({ onGenerate, onClose }: Props) {
+  const [mode, setMode] = useState<'quiz' | 'quick'>('quiz');
   const [answers, setAnswers] = useState<RoutineAnswers>({
     goal: GOALS[1],
     experience: EXPERIENCE[0],
@@ -54,13 +56,17 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    await generate();
+  };
+
+  const generate = async (context?: RoutineAnswers['context']) => {
     if (pending) return;
     const customized = customizeRoutineAnswers(answers, customEquipment, preferredExercises);
     if (customized.equipment.length === 0) { setError('Choose your equipment or add your own below.'); return; }
     setPending(true);
     setError(null);
     try {
-      await onGenerate(customized);
+      await onGenerate(context ? { ...customized, context } : customized);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setPending(false);
@@ -69,7 +75,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
 
   return (
     <dialog ref={dialog} className="intake-overlay" aria-labelledby="intake-title" onCancel={event => { event.preventDefault(); if (!pending) onClose(); }}>
-      <form
+      {mode === 'quiz' ? <WorkoutQuiz answers={answers} setAnswers={setAnswers} customEquipment={customEquipment} setCustomEquipment={setCustomEquipment} preferredExercises={preferredExercises} setPreferredExercises={setPreferredExercises} pending={pending} error={error} onGenerate={generate} onSkip={() => { setMode('quick'); setError(null); }} onClose={onClose}/> : <form
         onSubmit={handleSubmit}
         className="cloud-dialog intake-form w-full max-w-md max-h-full overflow-y-auto space-y-4 rounded-3xl border border-[#d5e0e8] bg-white p-6 shadow-[0_12px_40px_rgba(30,58,82,0.12)]"
       >
@@ -167,7 +173,7 @@ export default function IntakeModal({ onGenerate, onClose }: Props) {
           </button>
         </div>
         <p className="gemini-credit">Powered by Gemini</p>
-      </form>
+      </form>}
     </dialog>
   );
 }

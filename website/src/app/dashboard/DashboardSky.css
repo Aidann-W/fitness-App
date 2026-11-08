@@ -1,4 +1,4 @@
-/* Reuses the workout hero artwork without moving the Dashboard's data. */
+/* Shared cloud backdrop across all fitness pages. */
 .cloud-app.dashboard-sky-page {
   position: relative;
   isolation: isolate;
@@ -11,6 +11,10 @@
   pointer-events: none;
   z-index: -1;
 }
+.dashboard-sky-parallax {
+  position: absolute;
+  inset: -24px 0;
+}
 .dashboard-sky-art {
   position: absolute;
   inset: -12px 0;
@@ -22,5 +26,5 @@
   .dashboard-sky-art { background-position: 68% center; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-sky-art { transform: none !important; }
+  .dashboard-sky-art, .dashboard-sky-parallax { transform: none !important; }
 }

@@ -21,6 +21,23 @@ export interface RoutineAnswers {
   minutes: number;
   focus: string;
   preferredExercises?: string[];
+  context?: {
+    specificGoal: string;
+    deadline: string;
+    history: string;
+    performance: string;
+    daysPerWeek: string;
+    constraints: string;
+    environment: string;
+    limitations: string;
+    sleep: string;
+    stress: string;
+    preferences: string;
+    age: string;
+    height: string;
+    bodyweight: string;
+    sex: string;
+  };
 }
 
 export interface SetEntry {
