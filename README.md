@@ -173,4 +173,4 @@ API routes query Supabase as the signed-in user, so row-level security limits ev
 
 ## Team
 
-Built at HackRPI 2026 by Aidan Warren and Cooper Lam.
+Built at HackRPI 2026 by Aidan Warren, Cooper Lam, and Pavel DeSouza.
