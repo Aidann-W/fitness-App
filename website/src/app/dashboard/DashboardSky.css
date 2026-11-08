@@ -1,4 +1,4 @@
-/* Reuses the workout hero artwork without moving the Dashboard's data. */
+/* Shared cloud backdrop across all fitness pages. */
 .cloud-app.dashboard-sky-page {
   position: relative;
   isolation: isolate;

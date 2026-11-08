@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import './DashboardSky.css';
 
-// Decorative depth follows scrolling; the Dashboard's data stays still.
+// Shared decorative depth follows scrolling while page content stays still.
 export default function DashboardSky({ active }: { active: boolean }) {
   const artwork = useRef<HTMLDivElement>(null);
   const parallax = useRef<HTMLDivElement>(null);
