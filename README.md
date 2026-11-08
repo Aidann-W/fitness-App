@@ -50,7 +50,16 @@ Gemini (`gemini-3.5-flash` through the `@google/genai` SDK) powers three feature
 ---
 
 ## Features
-
+- Dashboard: Display a summary of your workouts, with different features such as a "Resume" button to continue workouts in progress. It also displays the your next workout along with pathways to the different pathways towards creating your own workout.
+- Training: Allows users to set their own workout plan or utilize AI to creating their own workout plan. Displays an excerise plan which users can edit number of sets, reps, rest, and number of excercises. If a user begins a new workout  and previously recorded a workout the website will display what they did in the past and what they have upcoming for their workout.
+- My routines: Displays the different plans a user has for their workout highlighting the different muscles and goals the user aims to be achieving through their workout.
+- Activity: Displays the different sets you have logged and the your progress on your different roles. 
+- Schedule: Users can upload their calendars and the AI can use this to map out what times are optimal for the user to start their workout and allows the user to export these changes to their own calendar.
+- Saving Progress: Allows users to save their progress by logging in which allows htem ot keep track of their own workouts and progress
+- Swap: Allows users to swap out excercises if different machines are not available allowing users to still achieve progress on their workout without using those unavailable machines.
+- Mobile: Interface is compatible on mobile devices allowing users to have even greater access to the website
+- Rest Timer: After a rep of an excercise is logged as being complete their is a built in rest timer ensuring that users rest for the approriate amount of time
+- Weekly Stats: Displays the amount of weight that the user has lifted per week allowing the user to track their progress
 ### Plan
 - **Create with AI.** A short form, then a Gemini-built routine.
 - **Build your own.** Start from a blank routine. The exercise field autocompletes from a built-in catalog of 133 exercises, 6 per page. Browse by split (upper, lower, push, pull, legs, core) or by muscle, or type any custom exercise.
@@ -170,7 +179,8 @@ API routes query Supabase as the signed-in user, so row-level security limits ev
 - No offline service worker. The app needs a connection to load, though a workout in progress survives a dropped connection.
 
 ---
-
+## Website Address
+- https://fitness-app-phi-gold.vercel.app/dashboard
 ## Team
 
 Built at HackRPI 2026 by Aidan Warren, Cooper Lam, and Pavel DeSouza.
