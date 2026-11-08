@@ -128,26 +128,6 @@
   background:#d0e2f7;
   padding:8px 12px
 }
-.stage-art {
-  position:relative;
-  width:150px;
-  height:150px;
-  flex-shrink:0;
-  display:grid;
-  place-items:center;
-  color:#769ac5
-}
-.stage-orbit {
-  position:absolute;
-  inset:0;
-  border:1px solid #ffffffcc;
-  border-radius:50%;
-  box-shadow:0 0 0 17px #ffffff25
-}
-.stage-art svg {
-  width:135px;
-  height:135px
-}
 .focus-session .set-logger {
   margin-top:20px;
   padding:24px;
@@ -433,14 +413,6 @@
 .stage-copy h3 {
   font-size:27px;
   max-width:240px
-}
-.stage-art {
-  position:absolute;
-  right:-30px;
-  bottom:-25px;
-  opacity:.22;
-  width:130px;
-  height:130px
 }
 .focus-session .set-logger {
   padding:18px
